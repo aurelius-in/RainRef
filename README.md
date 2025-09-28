@@ -4,8 +4,9 @@
   <img src="rr-white-trans.png" alt="RR White Transparent" height="80">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <img src="rr-black-trans.png" alt="RR Black Transparent" height="80">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </p>
+# RainRef
 
-**Tagline:** The Bridge from real user problems to safe fixes and clear product signals.
+**Tagline:** The Ref for real user problems: cited answers, safe actions, and clear product signals.
 
 RainRef is a standalone app that connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
 
@@ -37,13 +38,13 @@ No hallucinations. Every answer has a source. Every action has a receipt.
 
 ## What RainRef Is
 
-RainRef is **the Bridge**. It takes inputs from support tickets, chat, email, GitHub issues, Slack threads, and product telemetry. It turns them into a common shape, finds the best grounded answer with citations, proposes safe actions, and emits normalized **Product Signals** to your roadmap tools.
+RainRef is **the Ref**. It takes inputs from support tickets, chat, email, GitHub issues, Slack threads, and product telemetry. It turns them into a common shape, finds the best grounded answer with citations, proposes safe actions, and emits normalized **Product Signals** to your roadmap tools.
 
 **Key idea:** In → Normalize → Answer with sources → Safe action → Signal out.
 
 ```mermaid
 graph TB
-  A[Customer message or ticket] --> B[Bridge Event]
+  A[Customer message or ticket] --> B[Ref Event]
   B --> C[Triage intent and severity]
   C --> D[Grounded answer with citations]
   D --> E{Policy check}
@@ -83,10 +84,10 @@ graph TB
 
 ---
 
-## Buying Guide in Plain English
+## Why RainRef?
 
 * If you get many questions from customers, this tool helps you answer faster.
-* It shows where the answer came from. You can see the proof.
+* It shows where the answers came from. You can see the proof at scale.
 * It only runs actions that you approve. It does not go wild.
 * Every action writes a receipt. You can check what happened later.
 * It also makes a list of the biggest problems. This list is easy to share with your product team.
@@ -101,7 +102,7 @@ graph TB
 
 ## Features
 
-* **Bridge Events:** Common envelope for any inbound item
+* **Ref Events:** Common envelope for any inbound item
 * **Triage:** Intent, severity, product area, and routing
 * **Grounded Answers:** Canonical knowledge with citations
 * **Policy Gated Actions:** Only run approved actions with rollback hooks
@@ -118,7 +119,7 @@ graph TB
 RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/RainBeacon), with human‑in‑the‑loop for critical steps. You can also run in **rules‑only (no‑agent)** mode.
 
 1. **Intake Router**
-   *Job:* normalize Zendesk/Intercom/email/GitHub/Slack into a `BridgeEvent`.
+   *Job:* normalize Zendesk/Intercom/email/GitHub/Slack into a `RefEvent`.
    *Tools:* channel adapters; PII scrubber.
    *Output:* clean ticket text + metadata.
 
@@ -166,7 +167,8 @@ RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/Rain
 
 ```mermaid
 graph TB
-  A[BridgeEvent\n(Zendesk/Email/GitHub/Slack)] --> B[Intake Router]
+  A[Ref Event
+(Zendesk/Email/GitHub/Slack)] --> B[Intake Router]
   B --> C[Triage Agent\n(intent,severity,playbook)]
   C --> D[KB Grounder\n(retrieval + cited answer)]
   D --> E[Action Planner\n(suggest safe actions)]
@@ -197,7 +199,7 @@ graph TB
 
 ```mermaid
 graph TB
-  ZD[Zendesk] --> GW[Bridge Adapters]
+  ZD[Zendesk] --> GW[Ref Adapters]
   IC[Intercom] --> GW
   GH[GitHub Issues] --> GW
   EM[Email/IMAP] --> GW
@@ -225,10 +227,10 @@ graph TB
 
 ## Data Model
 
-* **bridge_events**
+* **ref_events**
   id, source, channel, payload_json, user_ref, product, received_at
 * **tickets**
-  id, bridge_event_id, text, severity, intent, status, product_area, created_at
+  id, ref_event_id, text, severity, intent, status, product_area, created_at
 * **kb_cards**
   id, title, canonical_text, tags[], sources[], trust_status, owner_id, updated_at
 * **actions**
@@ -240,7 +242,7 @@ graph TB
 
 ```mermaid
 graph TB
-  BE[(bridge_events)] --> TK[(tickets)]
+  RE[(ref_events)] --> TK[(tickets)]
   TK --> AC[(actions)]
   TK --> PS[(product_signals)]
   KB[(kb_cards)] --> TK
@@ -252,9 +254,9 @@ graph TB
 
 ## API Surface
 
-**Bridge and Tickets**
+**Ref Events and Tickets**
 
-* `POST /bridge/events` — Ingest external items in a common envelope.
+* `POST /ref/events` — Ingest external items in a common envelope.
 * `POST /support/ingest` — Convenience for ticket‑like events.
 
 **Answer and Action**
@@ -341,7 +343,7 @@ Run migrations and seed scripts from `infra/migrations`.
 
 ## How RainRef Fits The RainStorm Suite
 
-RainRef stands on its own. It also fits as the central **Bridge** inside RainStorm. It connects support reality to the build cycle and to market sensing.
+RainRef stands on its own. It also fits as the central **Ref** inside RainStorm. It connects support reality to the build cycle and to market sensing.
 
 * **In:** support and usage
 * **Through:** grounded answers and safe actions
@@ -353,7 +355,8 @@ graph TB
   RDK[RainDock\nProvision and activation] --> RSH
   RSH --> RBN[RainBeacon\nPolicies and receipts]
   RBN --> RPL[RainPulse\nTelemetry]
-  RPL --> RRF[RainRef\nThe Bridge]
+  RPL --> RRF[RainRef
+The Ref]
   RRF --> RS
   RRF --> RDK
   RRF --> RSH
