@@ -163,7 +163,7 @@ RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/Rain
    *Tools:* summarizer constrained to quoted sources.
    *Output:* draft KB card → human review → approved.
 
-**Flow (top → bottom):**
+**Flow:**
 
 ```mermaid
 graph TB
