@@ -353,7 +353,7 @@ RainRef stands on its own. It also fits as the central **Ref** inside RainStorm.
 graph TB
   RS[RainScout\nDiscover and pick ideas] --> RSH[RainShip\nRelease pipeline]
   RDK[RainDock\nProvision and activation] --> RSH
-  RSH --> RBN[RainBeacon\nPolicies and receipts]
+  RSH --> RBN[RainBeacon \n Policies and receipts]
   RBN --> RPL[RainPulse\nTelemetry]
   RPL --> RRF[RainRef
 The Ref]
