@@ -1,0 +1,48 @@
+﻿version: "3.8"
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: rainref
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  opa:
+    image: openpolicyagent/opa:latest
+    command: ["run", "--server", "/policies"]
+    volumes:
+      - ../api/policies:/policies
+    ports: ["8181:8181"]
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "-l", "/data", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0"]
+    volumes:
+      - ./azurite:/data
+    ports: ["10000:10000", "10001:10001", "10002:10002"]
+
+  api:
+    build: ../api
+    env_file: ../api/.env
+    ports: ["8080:8080"]
+    depends_on: [db, opa, azurite]
+    volumes:
+      - ../api:/app
+
+  web:
+    build: ../web
+    env_file: ../web/.env
+    ports: ["5173:5173"]
+    depends_on: [api]
+    volumes:
+      - ../web:/app
+
+volumes:
+  db_data:

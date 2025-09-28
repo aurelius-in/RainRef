@@ -1,0 +1,1 @@
+﻿# Ref Adapters namespace
