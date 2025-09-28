@@ -8,6 +8,7 @@ import KbDetail from "./pages/KbDetail";
 import Health from "./pages/Health";
 import Signals from "./pages/Signals";
 import Audit from "./pages/Audit";
+import NotFound from "./pages/NotFound";
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/health" element={<Health />} />
             <Route path="/signals" element={<Signals />} />
             <Route path="/audit" element={<Audit />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
       </ErrorBoundary>

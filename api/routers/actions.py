@@ -1,9 +1,11 @@
-﻿from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends, Query
 from services.policy import check_allow
 from services.beacon import emit_receipt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from models.entities import AuditLog, Action
+from models.schemas import ActionRequest
 import time
 
 router = APIRouter()
@@ -18,25 +20,30 @@ def get_db():
         db.close()
 
 @router.post("/execute")
-async def execute(action: dict, db: Session = Depends(get_db)):
-    # simple rate limit per action type: 1 per second
-    act_type = str(action.get("type", "any"))
+async def execute(action: ActionRequest, db: Session = Depends(get_db)):
+    act = action.model_dump()
+    act_type = act.get("type", "any")
     now = time.time()
     last = _last_exec.get(act_type, 0)
     if now - last < 1.0:
         raise HTTPException(status_code=429, detail="too many requests")
     _last_exec[act_type] = now
 
-    allowed = await check_allow(action)
+    allowed = await check_allow(act)
     if not allowed:
         raise HTTPException(status_code=403, detail="action not allowed by policy")
 
-    receipt = emit_receipt(action)
-    # write audit log and action record
+    receipt = emit_receipt(act)
     db.add(AuditLog(id=receipt, receipt_id=receipt, verified=False))
-    db.add(Action(id=f"a-{receipt}", ticket_id=(action.get("ticket_id") or None), type=act_type, params=action.get("params") or {}))
+    db.add(Action(id=f"a-{receipt}", ticket_id=(act.get("ticket_id") or None), type=act_type, params=act.get("params") or {}))
     try:
         db.commit()
     except Exception:
         db.rollback()
     return {"ok": True, "beacon_receipt_id": receipt}
+
+@router.get("/history")
+def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    offset = (page - 1) * limit
+    rows = db.execute(select(Action).offset(offset).limit(limit)).scalars().all()
+    return {"page": page, "limit": limit, "items": [{"id": r.id, "type": r.type, "ticket_id": r.ticket_id} for r in rows]}

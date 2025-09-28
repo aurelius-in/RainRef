@@ -1,0 +1,6 @@
+﻿:root {
+  --brand-bg: #0a2540;
+  --brand-fg: #ffffff;
+  --brand-border: #e5e7eb;
+}
+body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }

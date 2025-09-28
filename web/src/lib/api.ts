@@ -11,8 +11,13 @@ api.interceptors.response.use(
   (err) => {
     const status = err?.response?.status;
     const msg = typeof err?.response?.data === 'string' ? err.response.data : (err?.response?.data?.detail || 'Request failed');
-    showToast(`Error ${status || ''} ${msg}`.trim());
-    console.error("API error", status, err?.response?.data);
+    const rid = err?.response?.headers?.['x-request-id'];
+    if (rid) {
+      showToast(`Request ${rid}: ${msg}`);
+    } else {
+      showToast(`Error ${status || ''} ${msg}`.trim());
+    }
+    console.error("API error", status, err?.response?.data, rid);
     return Promise.reject(err);
   }
 );

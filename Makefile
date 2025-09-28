@@ -12,3 +12,6 @@ migrate-seed:
 format:
 	cd api && black . && ruff check . --fix
 	cd web && npx prettier --write "src/**/*.{ts,tsx}" "index.html"
+
+format-web:
+	cd web && npx prettier --write "src/**/*.{ts,tsx}" "index.html" && npx eslint src --ext .ts,.tsx --fix

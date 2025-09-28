@@ -18,7 +18,6 @@ def get_db():
 @router.post("/answer", response_model=AnswerProposal)
 def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
     ref_event = ref_event or RefEventIn(source="support", channel="inbox", text="help", user_ref=None)
-    # create a ticket first
     tid = f"t-{uuid.uuid4().hex[:8]}"
     t = Ticket(id=tid, ref_event_id=None, status="draft")
     db.add(t)
@@ -31,7 +30,6 @@ def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
     proposal, _ = run_flow(db, ref_event)
     if not proposal.citations:
         raise HTTPException(status_code=422, detail="answer must include citations")
-    # attach ticket id
     proposal = AnswerProposal(**{**proposal.model_dump(), "ticket_id": tid})
     return proposal
 
@@ -55,3 +53,16 @@ def list_tickets(db: Session = Depends(get_db)):
         d = dict(r._mapping)
         items.append({"id": d.get("id"), "status": d.get("status"), "ref_event_id": d.get("ref_event_id")})
     return {"items": items}
+
+@router.put("/tickets/{ticket_id}")
+def update_ticket(ticket_id: str, payload: dict, db: Session = Depends(get_db)):
+    t = db.get(Ticket, ticket_id)
+    if not t:
+        raise HTTPException(status_code=404, detail="not_found")
+    t.status = payload.get("status", t.status)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to update ticket")
+    return {"id": t.id, "status": t.status}

@@ -1,24 +1,27 @@
 ﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import Spinner from "../components/Spinner";
 import { api } from "../lib/api";
 
 export default function Inbox() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<any[] | null>(null);
   useEffect(() => {
-    api.get("/ref/events").then((r) => setItems(r.data.items || []));
+    api.get("/ref/events").then(r => setItems(r.data.items || [])).catch(() => setItems([]));
   }, []);
   return (
     <div>
       <h2>Ref Events</h2>
-      <ul>
-        {items.map((e) => (
-          <li key={e.id}>
-            <Link to={`/events/${e.id}`}>
-              {e.channel}: {e.text}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      {items === null ? (
+        <Spinner />
+      ) : (
+        <ul>
+          {items.map((e) => (
+            <li key={e.id}>
+              <Link to={`/events/${e.id}`}>{e.channel}: {e.text}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
