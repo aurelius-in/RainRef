@@ -8,7 +8,7 @@
 
 #### *The Ref for real user problems: cited answers, safe actions, and clear product signals.*
 
-RainRef is a standalone app that connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
+RainRef connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
 
 No hallucinations. Every answer has a source. Every action has a receipt.
 
