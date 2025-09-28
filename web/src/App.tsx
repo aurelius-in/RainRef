@@ -1,19 +1,21 @@
-﻿import { useEffect, useState } from "react";
-import { api } from "./lib/api";
+﻿import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import Header from "./components/Header";
+import Inbox from "./pages/Inbox";
+import EventDetail from "./pages/EventDetail";
 
 export default function App() {
-  const [health, setHealth] = useState<any>(null);
-  useEffect(() => {
-    api.get("/healthz").then(r => setHealth(r.data)).catch(() => setHealth({ ok: false }));
-  }, []);
   return (
-    <>
+    <BrowserRouter>
       <Header />
       <main style={{ padding: 16 }}>
-        <h2>Health</h2>
-        <pre>{JSON.stringify(health, null, 2)}</pre>
+        <nav style={{ marginBottom: 12 }}>
+          <Link to="/">Inbox</Link>
+        </nav>
+        <Routes>
+          <Route path="/" element={<Inbox />} />
+          <Route path="/events/:id" element={<EventDetail />} />
+        </Routes>
       </main>
-    </>
+    </BrowserRouter>
   );
 }

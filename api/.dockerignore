@@ -1,0 +1,5 @@
+﻿__pycache__
+.venv
+infra/versions/*.pyc
+*.pyc
+.env
