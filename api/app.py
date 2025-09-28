@@ -1,7 +1,10 @@
-﻿from fastapi import FastAPI
+﻿from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from routers import ref_events, support, actions, signals, kb, audit
 import os
+import logging
+import time
+from services.health import check_all
 
 app = FastAPI(title="RainRef API")
 
@@ -13,6 +16,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+logger = logging.getLogger("uvicorn.access")
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    dur = (time.time() - start) * 1000
+    logger.info(f"{request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
+    return response
+
 app.include_router(ref_events.router, prefix="/ref", tags=["ref-events"])
 app.include_router(support.router, prefix="/support", tags=["support"])
 app.include_router(actions.router, prefix="/action", tags=["action"])
@@ -23,3 +36,8 @@ app.include_router(audit.router, prefix="/audit", tags=["audit"])
 @app.get("/healthz")
 def health():
     return {"ok": True}
+
+@app.get("/healthz/details")
+async def health_details():
+    details = await check_all()
+    return {"ok": all(details.values()), **details}

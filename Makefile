@@ -8,3 +8,7 @@ revision:
 migrate-seed:
 	$(MAKE) migrate
 	python infra/migrations/seed.py
+
+format:
+	cd api && black . && ruff check . --fix
+	cd web && npx prettier --write "src/**/*.{ts,tsx}" "index.html"

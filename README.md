@@ -437,3 +437,10 @@ curl -X POST http://localhost:8080/signals/emit -H 'Content-Type: application/js
 
 ### Local blob storage
 Azurite runs in Docker. Connection string uses `UseDevelopmentStorage=true` so uploads go to the local emulator.
+
+### SDKs
+- TypeScript: see `sdks/ts/index.ts`
+- Python: `from rainref import RainRefClient` then `RainRefClient().health()`
+
+### Web Knowledge page
+Lists cards and supports file upload to `/kb/upload`.
