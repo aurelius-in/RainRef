@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
   <img src="rr-black-white.png" alt="RR Black on White" height="80">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
   <img src="rr-white-black.png" alt="RR White on Black" height="80">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br/>
   <img src="rr-white-trans.png" alt="RR White Transparent" height="80">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -40,7 +40,7 @@ No hallucinations. Every answer has a source. Every action has a receipt.
 
 RainRef is **the Ref**. It takes inputs from support tickets, chat, email, GitHub issues, Slack threads, and product telemetry. It turns them into a common shape, finds the best grounded answer with citations, proposes safe actions, and emits normalized **Product Signals** to your roadmap tools.
 
-**Key idea:** In → Normalize → Answer with sources → Safe action → Signal out.
+**Key idea:** In â†’ Normalize â†’ Answer with sources â†’ Safe action â†’ Signal out.
 
 ```mermaid
 graph TB
@@ -106,7 +106,7 @@ graph TB
 * **Triage:** Intent, severity, product area, and routing
 * **Grounded Answers:** Canonical knowledge with citations
 * **Policy Gated Actions:** Only run approved actions with rollback hooks
-* **Receipts:** Tamper‑evident records for every action
+* **Receipts:** Tamperâ€‘evident records for every action
 * **Product Signals:** Bugs, frictions, feature requests, pricing objections, churn risk
 * **Packs and KB:** Curated paragraphs with sources, review states, and templates
 * **Dashboards:** SLA, answer quality, action safety, signal trends
@@ -116,7 +116,7 @@ graph TB
 
 ## AI Agents
 
-RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/RainBeacon), with human‑in‑the‑loop for critical steps. You can also run in **rules‑only (no‑agent)** mode.
+RainRef uses **small, purposeâ€‘built agents**, each boxed by policies (OPA/RainBeacon), with humanâ€‘inâ€‘theâ€‘loop for critical steps. You can also run in **rulesâ€‘only (noâ€‘agent)** mode.
 
 1. **Intake Router**
    *Job:* normalize Zendesk/Intercom/email/GitHub/Slack into a `RefEvent`.
@@ -154,14 +154,14 @@ RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/Rain
    *Output:* `ProductSignal` with evidence refs (ticket id, KB card ids, receipt id).
 
 8. **Evaluator (Quality & Drift)**
-   *Job:* score answers for citation quality; flag KB drift; catch policy near‑misses.
+   *Job:* score answers for citation quality; flag KB drift; catch policy nearâ€‘misses.
    *Tools:* rule checks + small LLM rubric.
    *Output:* metrics; review queue items.
 
 9. **KB Curator (optional)**
    *Job:* suggest **canonical paragraphs** and tag fixes when patterns repeat.
    *Tools:* summarizer constrained to quoted sources.
-   *Output:* draft KB card → human review → approved.
+   *Output:* draft KB card â†’ human review â†’ approved.
 
 **Flow:**
 
@@ -181,13 +181,13 @@ graph TB
 
 ```
 
-**No‑agent mode:** disable generative steps; use exact‑match KB, canned replies, and deterministic playbooks—still with receipts and signals.
+**Noâ€‘agent mode:** disable generative steps; use exactâ€‘match KB, canned replies, and deterministic playbooksâ€”still with receipts and signals.
 
 ---
 
 ## Architecture
 
-**Design goals:** simple to deploy, safe by default, strong audit trail, backend‑first.
+**Design goals:** simple to deploy, safe by default, strong audit trail, backendâ€‘first.
 
 * Frontend: React + TypeScript
 * API: FastAPI
@@ -256,27 +256,27 @@ graph TB
 
 **Ref Events and Tickets**
 
-* `POST /ref/events` — Ingest external items in a common envelope.
-* `POST /support/ingest` — Convenience for ticket‑like events.
+* `POST /ref/events` â€” Ingest external items in a common envelope.
+* `POST /support/ingest` â€” Convenience for ticketâ€‘like events.
 
 **Answer and Action**
 
-* `POST /support/answer` — Returns answer markdown, citations, suggested actions.
-* `POST /action/execute` — Runs an action through policy checks and writes a receipt.
+* `POST /support/answer` â€” Returns answer markdown, citations, suggested actions.
+* `POST /action/execute` â€” Runs an action through policy checks and writes a receipt.
 
 **Signals**
 
-* `POST /signals/emit` — Emit a Product Signal for roadmap tools or RainScout.
-* `GET /signals/search` — Filter by type, product area, and strength.
+* `POST /signals/emit` â€” Emit a Product Signal for roadmap tools or RainScout.
+* `GET /signals/search` â€” Filter by type, product area, and strength.
 
 **KB**
 
-* `GET /kb/cards?query=&tags=` — Hybrid search across approved cards.
-* `POST /kb/cards` — Create and update canonical text with sources.
+* `GET /kb/cards?query=&tags=` â€” Hybrid search across approved cards.
+* `POST /kb/cards` â€” Create and update canonical text with sources.
 
 **Audit**
 
-* `GET /audit/:id` — Fetch a receipt by id.
+* `GET /audit/:id` â€” Fetch a receipt by id.
 
 **Events**
 
@@ -400,3 +400,32 @@ TBD. See `LICENSE` when available.
 ### Notes
 
 * We avoid fluff words. We favor receipts, citations, and clear APIs.
+
+## RainRef Dev
+
+Prereqs: Node 20+, Python 3.11+, Docker Desktop, Git, Cursor, Azure Storage conn string (or Azurite).
+
+Quick start:
+1. Copy `.env`, `api/.env`, `web/.env` from this repo and adjust as needed.
+2. Start the dev stack:
+   ```bash
+   docker compose -f infra/docker-compose.yml up --build
+   ```
+3. Visit API http://localhost:8080/healthz and Web http://localhost:5173
+
+Makefile helpers:
+- `make up` / `make down`
+- `make api` / `make web` for local hot reload
+- `make test` runs API unit tests
+- `make seed` seeds minimal data
+
+Smoke test:
+```bash
+curl -X POST http://localhost:8080/ref/events -H 'Content-Type: application/json' -d '{"source":"email","channel":"support","text":"I did not get the activation link","user_ref":"u-1"}'
+
+curl -X POST http://localhost:8080/support/answer
+
+curl -X POST http://localhost:8080/action/execute -H 'Content-Type: application/json' -d '{"type":"resend_activation","params":{"user_id":"u-1"}}'
+
+curl -X POST http://localhost:8080/signals/emit -H 'Content-Type: application/json' -d '{"origin":"ticket:t1","type":"friction","strength":0.8,"evidence_refs":["kb:card-123","receipt:r-abc"]}'
+```
