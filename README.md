@@ -444,3 +444,10 @@ Azurite runs in Docker. Connection string uses `UseDevelopmentStorage=true` so u
 
 ### Web Knowledge page
 Lists cards and supports file upload to `/kb/upload`.
+
+### Windows helper scripts
+- `scripts/up.ps1` to start the stack
+- `scripts/migrate.ps1` to run DB migrations
+- `scripts/seed.ps1` to seed data
+
+Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from repo root).

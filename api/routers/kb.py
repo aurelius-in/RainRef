@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Query, Depends, UploadFile, File, HTTPException
+﻿from fastapi import APIRouter, Query, Depends, UploadFile, File, HTTPException, Response
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from models.db import SessionLocal
@@ -6,6 +6,7 @@ from models.entities import KbCard
 from services.blob import upload_bytes
 from services.kb_embed import embed_text
 import uuid
+import httpx
 
 router = APIRouter()
 
@@ -22,9 +23,12 @@ def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Quer
     stmt = select(KbCard).offset(offset).limit(limit)
     rows = db.execute(stmt).scalars().all()
     q = (query or "").lower()
+    tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
     results = []
     for r in rows:
-        if not q or q in (r.title or "").lower() or q in (r.body or "").lower():
+        matches_q = (not q) or q in (r.title or "").lower() or q in (r.body or "").lower()
+        matches_tags = (not tag_list) or (set(tag_list).issubset(set((r.tags or []))))
+        if matches_q and matches_tags:
             results.append({"id": r.id, "title": r.title, "tags": r.tags or []})
     return {"page": page, "limit": limit, "results": results}
 
@@ -103,3 +107,11 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
         return {"id": cid, "url": url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/download")
+async def download(url: str = Query(...)):
+    if not (url.startswith("http://") or url.startswith("https://")):
+        raise HTTPException(status_code=400, detail="only http/https URLs supported")
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(url)
+        return Response(content=r.content, media_type=r.headers.get("content-type", "application/octet-stream"))
