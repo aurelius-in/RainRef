@@ -19,11 +19,18 @@ services:
       - ../api/policies:/policies
     ports: ["8181:8181"]
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "-l", "/data", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0"]
+    volumes:
+      - ./azurite:/data
+    ports: ["10000:10000", "10001:10001", "10002:10002"]
+
   api:
     build: ../api
     env_file: ../api/.env
     ports: ["8080:8080"]
-    depends_on: [db, opa]
+    depends_on: [db, opa, azurite]
     volumes:
       - ../api:/app
 

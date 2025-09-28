@@ -1,9 +1,10 @@
-﻿from fastapi import APIRouter, Query, Depends, UploadFile, File
+﻿from fastapi import APIRouter, Query, Depends, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from models.db import SessionLocal
 from models.entities import KbCard
 from services.blob import upload_bytes
+from services.kb_embed import embed_text
 import uuid
 
 router = APIRouter()
@@ -30,7 +31,7 @@ def search_cards(query: str = Query(""), tags: str = Query(""), db: Session = De
 def get_card(card_id: str, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
     if not obj:
-        return {"error": "not_found"}
+        raise HTTPException(status_code=404, detail="not found")
     return {"id": obj.id, "title": obj.title, "body": obj.body, "tags": obj.tags or []}
 
 @router.post("/cards")
@@ -41,9 +42,16 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
         existing.title = card.get("title") or existing.title
         existing.body = card.get("body") or existing.body
         existing.tags = card.get("tags") or existing.tags
+        existing.embedding = embed_text(existing.body or "")
         obj = existing
     else:
-        obj = KbCard(id=cid, title=card.get("title", "Untitled"), body=card.get("body", ""), tags=card.get("tags", []))
+        obj = KbCard(
+            id=cid,
+            title=card.get("title", "Untitled"),
+            body=card.get("body", ""),
+            tags=card.get("tags", []),
+            embedding=embed_text(card.get("body", "")),
+        )
         db.add(obj)
     try:
         db.commit()
@@ -53,14 +61,17 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
 
 @router.post("/upload")
 async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    content = await file.read()
-    blob_name = f"kb-{uuid.uuid4().hex[:8]}-{file.filename}"
-    url = upload_bytes("rainref-kb", blob_name, content, file.content_type or "application/octet-stream")
-    cid = f"kb-{uuid.uuid4().hex[:6]}"
-    obj = KbCard(id=cid, title=file.filename, body=f"Attachment: {url}", tags=["attachment"])
-    db.add(obj)
     try:
-        db.commit()
-    except Exception:
-        db.rollback()
-    return {"id": cid, "url": url}
+        content = await file.read()
+        blob_name = f"kb-{uuid.uuid4().hex[:8]}-{file.filename}"
+        url = upload_bytes("rainref-kb", blob_name, content, file.content_type or "application/octet-stream")
+        cid = f"kb-{uuid.uuid4().hex[:6]}"
+        obj = KbCard(id=cid, title=file.filename, body=f"Attachment: {url}", tags=["attachment"], embedding=[])
+        db.add(obj)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+        return {"id": cid, "url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

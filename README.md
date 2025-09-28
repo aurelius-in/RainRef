@@ -429,3 +429,11 @@ curl -X POST http://localhost:8080/action/execute -H 'Content-Type: application/
 
 curl -X POST http://localhost:8080/signals/emit -H 'Content-Type: application/json' -d '{"origin":"ticket:t1","type":"friction","strength":0.8,"evidence_refs":["kb:card-123","receipt:r-abc"]}'
 ```
+
+### Dev database migrations
+- Create new revision: `make revision`
+- Apply latest: `make migrate`
+- Apply and seed: `make migrate-seed`
+
+### Local blob storage
+Azurite runs in Docker. Connection string uses `UseDevelopmentStorage=true` so uploads go to the local emulator.
