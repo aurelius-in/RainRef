@@ -167,17 +167,19 @@ RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/Rain
 
 ```mermaid
 graph TB
-  A[Ref Event<br/>(Zendesk / Email / GitHub / Slack)] --> B[Intake Router]
-  B --> C[Triage Agent<br/>(intent, severity, playbook)]
-  C --> D[KB Grounder<br/>(retrieval + cited answer)]
-  D --> E[Action Planner<br/>(suggest safe actions)]
-  E --> F{Policy Gate<br/>(OPA + Beacon)}
-  F -->|Approve| G[Executor<br/>(RainDock / RainShip)]
+  graph TB
+  A[Ref Event] --> B[Intake Router]
+  B --> C[Triage Agent]
+  C --> D[KB Grounder]
+  D --> E[Action Planner]
+  E --> F{Policy Gate}
+  F -->|Approve| G[Executor]
   F -->|Review| H[Human-in-the-loop]
   G --> I[RainBeacon Receipt]
-  D --> J[Signalizer<br/>(ProductSignal)]
+  D --> J[Signalizer]
   G --> J
   J --> K[RainScout / Jira / Linear]
+
 ```
 
 **No‑agent mode:** disable generative steps; use exact‑match KB, canned replies, and deterministic playbooks—still with receipts and signals.
