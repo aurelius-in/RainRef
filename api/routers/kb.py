@@ -1,6 +1,6 @@
 ﻿from fastapi import APIRouter, Query, Depends, UploadFile, File, HTTPException, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from models.db import SessionLocal
 from models.entities import KbCard
 from services.blob import upload_bytes
@@ -18,10 +18,12 @@ def get_db():
         db.close()
 
 @router.get("/cards")
-def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
     offset = (page - 1) * limit
-    stmt = select(KbCard).offset(offset).limit(limit)
-    rows = db.execute(stmt).scalars().all()
+    total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
+    stmt = select(KbCard)
+    stmt = stmt.order_by(KbCard.id.asc() if order == "asc" else KbCard.id.desc())
+    rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
     q = (query or "").lower()
     tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
     results = []
@@ -30,13 +32,13 @@ def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Quer
         matches_tags = (not tag_list) or (set(tag_list).issubset(set((r.tags or []))))
         if matches_q and matches_tags:
             results.append({"id": r.id, "title": r.title, "tags": r.tags or []})
-    return {"page": page, "limit": limit, "results": results}
+    return {"page": page, "limit": limit, "total": int(total), "results": results}
 
 @router.get("/cards/{card_id}")
 def get_card(card_id: str, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise HTTPException(status_code=404, detail="not_found")
     return {"id": obj.id, "title": obj.title, "body": obj.body, "tags": obj.tags or []}
 
 @router.post("/cards")
@@ -68,7 +70,7 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
 def update_card(card_id: str, card: dict, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise HTTPException(status_code=404, detail="not_found")
     obj.title = card.get("title") or obj.title
     obj.body = card.get("body") or obj.body
     obj.tags = card.get("tags") or obj.tags
@@ -83,7 +85,7 @@ def update_card(card_id: str, card: dict, db: Session = Depends(get_db)):
 def delete_card(card_id: str, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
     if not obj:
-        raise HTTPException(status_code=404, detail="not found")
+        raise HTTPException(status_code=404, detail="not_found")
     try:
         db.delete(obj)
         db.commit()

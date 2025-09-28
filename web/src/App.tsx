@@ -8,6 +8,8 @@ import KbDetail from "./pages/KbDetail";
 import Health from "./pages/Health";
 import Signals from "./pages/Signals";
 import Audit from "./pages/Audit";
+import Actions from "./pages/Actions";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -22,6 +24,8 @@ export default function App() {
             <Link to="/health">Health</Link>
             <Link to="/signals">Signals</Link>
             <Link to="/audit">Audit</Link>
+            <Link to="/actions">Actions</Link>
+            <Link to="/settings">Settings</Link>
           </nav>
           <Routes>
             <Route path="/" element={<Inbox />} />
@@ -31,6 +35,8 @@ export default function App() {
             <Route path="/health" element={<Health />} />
             <Route path="/signals" element={<Signals />} />
             <Route path="/audit" element={<Audit />} />
+            <Route path="/actions" element={<Actions />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

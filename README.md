@@ -451,3 +451,7 @@ Lists cards and supports file upload to `/kb/upload`.
 - `scripts/seed.ps1` to seed data
 
 Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from repo root).
+
+### CSV export and pagination
+- Export events: GET /ref/events/export
+- Lists include `total` for pagination; UI shows Prev/Next controls.
