@@ -351,12 +351,11 @@ RainRef stands on its own. It also fits as the central **Ref** inside RainStorm.
 
 ```mermaid
 graph TB
-  RS[RainScout\nDiscover and pick ideas] --> RSH[RainShip\nRelease pipeline]
-  RDK[RainDock\nProvision and activation] --> RSH
-  RSH --> RBN[RainBeacon \n Policies and receipts]
-  RBN --> RPL[RainPulse\nTelemetry]
-  RPL --> RRF[RainRef
-The Ref]
+  RS[RainScout <br/> Discover and pick ideas] --> RSH[RainShip\nRelease pipeline]
+  RDK[RainDock <br/> Provision and activation] --> RSH
+  RSH --> RBN[RainBeacon <br/> Policies and receipts]
+  RBN --> RPL[RainPulse <br/> Telemetry]
+  RPL --> RRF[RainRef <br/> The Ref]
   RRF --> RS
   RRF --> RDK
   RRF --> RSH
