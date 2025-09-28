@@ -400,4 +400,3 @@ TBD. See `LICENSE` when available.
 ### Notes
 
 * We avoid fluff words. We favor receipts, citations, and clear APIs.
-* We do not use the words “demo” or “simulation” in this repo.
