@@ -7,10 +7,15 @@ export default function EventDetail() {
   const [event, setEvent] = useState<any>(null);
   const [answer, setAnswer] = useState<any>(null);
   useEffect(() => {
-    api.get(`/ref/events/${id}`).then(r => setEvent(r.data));
+    api.get(`/ref/events/${id}`).then((r) => setEvent(r.data));
   }, [id]);
   const draft = async () => {
-    const r = await api.post("/support/answer", { source: "inbox", channel: "support", text: event?.text || "", user_ref: event?.user_ref });
+    const r = await api.post("/support/answer", {
+      source: "inbox",
+      channel: "support",
+      text: event?.text || "",
+      user_ref: event?.user_ref,
+    });
     setAnswer(r.data);
   };
   const execute = async () => {
@@ -33,7 +38,11 @@ export default function EventDetail() {
               <ul>
                 {answer.citations.map((c: string) => {
                   const cid = c.startsWith("kb:") ? c.slice(3) : c;
-                  return <li key={c}><Link to={`/kb/${cid}`}>{c}</Link></li>;
+                  return (
+                    <li key={c}>
+                      <Link to={`/kb/${cid}`}>{c}</Link>
+                    </li>
+                  );
                 })}
               </ul>
             </div>

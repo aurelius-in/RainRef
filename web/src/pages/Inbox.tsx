@@ -5,7 +5,7 @@ import { api } from "../lib/api";
 export default function Inbox() {
   const [items, setItems] = useState<any[]>([]);
   useEffect(() => {
-    api.get("/ref/events").then(r => setItems(r.data.items || []));
+    api.get("/ref/events").then((r) => setItems(r.data.items || []));
   }, []);
   return (
     <div>
@@ -13,7 +13,9 @@ export default function Inbox() {
       <ul>
         {items.map((e) => (
           <li key={e.id}>
-            <Link to={`/events/${e.id}`}>{e.channel}: {e.text}</Link>
+            <Link to={`/events/${e.id}`}>
+              {e.channel}: {e.text}
+            </Link>
           </li>
         ))}
       </ul>

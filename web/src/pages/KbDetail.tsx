@@ -7,7 +7,7 @@ export default function KbDetail() {
   const [card, setCard] = useState<any>(null);
   useEffect(() => {
     if (!id) return;
-    api.get(`/kb/cards/${id}`).then(r => setCard(r.data));
+    api.get(`/kb/cards/${id}`).then((r) => setCard(r.data));
   }, [id]);
   return (
     <div>

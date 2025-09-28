@@ -12,7 +12,7 @@ export default function App() {
       <ErrorBoundary>
         <Header />
         <main style={{ padding: 16 }}>
-          <nav style={{ marginBottom: 12, display: 'flex', gap: 12 }}>
+          <nav style={{ marginBottom: 12, display: "flex", gap: 12 }}>
             <Link to="/">Inbox</Link>
             <Link to="/kb">Knowledge</Link>
           </nav>
