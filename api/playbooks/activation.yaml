@@ -1,0 +1,15 @@
+﻿id: activation_1
+match:
+  intent: friction
+  patterns:
+    - "did not get activation"
+    - "activation email missing"
+actions:
+  - type: resend_activation
+    params:
+      template: "welcome_v2"
+      throttle_minutes: 30
+policies:
+  require_2fa: false
+  allowed_roles:
+    - support_lead
