@@ -6,6 +6,13 @@ export const api = axios.create({
   timeout: 8000,
 });
 
+api.interceptors.request.use((config) => {
+  const rid = `req-${Math.random().toString(36).slice(2, 10)}`;
+  config.headers = config.headers || {};
+  (config.headers as any)['X-Request-ID'] = rid;
+  return config;
+});
+
 api.interceptors.response.use(
   (r) => r,
   (err) => {

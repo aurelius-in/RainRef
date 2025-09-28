@@ -35,16 +35,22 @@ def ingest_event(evt: RefEventIn, db: Session = Depends(get_db)):
     return {"status": "ok", "id": rid, "normalized": True}
 
 @router.get("/events")
-def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
+def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), q: str = Query(""), source: str = Query(""), channel: str = Query(""), db: Session = Depends(get_db)):
     offset = (page - 1) * limit
-    total = db.execute(select(func.count()).select_from(RefEvent)).scalar() or 0
     stmt = select(RefEvent)
-    if order == "asc":
-        stmt = stmt.order_by(RefEvent.id.asc())
-    else:
-        stmt = stmt.order_by(RefEvent.id.desc())
+    if source:
+        stmt = stmt.where(RefEvent.source == source)
+    if channel:
+        stmt = stmt.where(RefEvent.channel == channel)
+    stmt = stmt.order_by(RefEvent.id.asc() if order == "asc" else RefEvent.id.desc())
+    total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
     rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "source": r.source, "channel": r.channel, "text": r.text} for r in rows]}
+    ql = (q or "").lower()
+    items = []
+    for r in rows:
+        if not ql or ql in (r.text or "").lower():
+            items.append({"id": r.id, "source": r.source, "channel": r.channel, "text": r.text})
+    return {"page": page, "limit": limit, "total": int(total), "items": items}
 
 @router.get("/events/{event_id}")
 def get_event(event_id: str, db: Session = Depends(get_db)):
@@ -52,6 +58,19 @@ def get_event(event_id: str, db: Session = Depends(get_db)):
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
     return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
+
+@router.delete("/events/{event_id}")
+def delete_event(event_id: str, db: Session = Depends(get_db)):
+    row = db.get(RefEvent, event_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="not_found")
+    try:
+        db.delete(row)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to delete")
+    return {"id": event_id, "deleted": True}
 
 @router.get("/events/export")
 def export_events(db: Session = Depends(get_db)):

@@ -16,6 +16,8 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO product_signals (id, origin, type, strength, evidence_refs) VALUES
   ('s-seed1','ticket:t1','friction',0.8,'{"kb:activation"}')
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO tickets (id, status) VALUES ('t-seed1','open') ON CONFLICT (id) DO NOTHING;
 """
 
 def main():

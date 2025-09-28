@@ -1,4 +1,5 @@
 ﻿from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi.responses import JSONResponse
 from services.policy import check_allow
 from services.beacon import emit_receipt
 from models.db import SessionLocal
@@ -6,11 +7,12 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from models.entities import AuditLog, Action
 from models.schemas import ActionRequest
+from config import settings
 import time
 
 router = APIRouter()
 
-_last_exec: dict[str, float] = {}
+_exec_times: dict[str, list[float]] = {}
 
 def get_db():
     db = SessionLocal()
@@ -24,10 +26,18 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     act = action.model_dump()
     act_type = act.get("type", "any")
     now = time.time()
-    last = _last_exec.get(act_type, 0)
-    if now - last < 1.0:
-        raise HTTPException(status_code=429, detail="too many requests")
-    _last_exec[act_type] = now
+    win = settings.rate_limit_window_sec
+    maxn = settings.rate_limit_per_window
+    arr = _exec_times.get(act_type, [])
+    arr = [t for t in arr if now - t < win]
+    if len(arr) >= maxn:
+        resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
+        resp.headers["X-RateLimit-Limit"] = str(maxn)
+        resp.headers["X-RateLimit-Remaining"] = str(0)
+        resp.headers["X-RateLimit-Window-Seconds"] = str(win)
+        return resp
+    arr.append(now)
+    _exec_times[act_type] = arr
 
     allowed = await check_allow(act)
     if not allowed:
@@ -40,7 +50,11 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
         db.commit()
     except Exception:
         db.rollback()
-    return {"ok": True, "beacon_receipt_id": receipt}
+    resp = JSONResponse(status_code=200, content={"ok": True, "beacon_receipt_id": receipt})
+    resp.headers["X-RateLimit-Limit"] = str(maxn)
+    resp.headers["X-RateLimit-Remaining"] = str(max(0, maxn - len(arr)))
+    resp.headers["X-RateLimit-Window-Seconds"] = str(win)
+    return resp
 
 @router.get("/history")
 def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
@@ -48,4 +62,8 @@ def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), or
     total = db.execute(select(func.count()).select_from(Action)).scalar() or 0
     stmt = select(Action).order_by(Action.id.asc() if order == "asc" else Action.id.desc())
     rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
-    return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "type": r.type, "ticket_id": r.ticket_id} for r in rows]}
+    items = []
+    for r in rows:
+        receipt_id = r.id[2:] if r.id.startswith("a-") else r.id
+        items.append({"id": r.id, "receipt_id": receipt_id, "type": r.type, "ticket_id": r.ticket_id})
+    return {"page": page, "limit": limit, "total": int(total), "items": items}

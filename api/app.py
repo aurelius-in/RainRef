@@ -10,7 +10,7 @@ from config import settings
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 
-app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Signals", version="0.1.0")
+app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Signals", version=settings.app_version)
 
 logging.getLogger().setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
 
@@ -31,6 +31,10 @@ async def request_id_and_log(request: Request, call_next):
     start = time.time()
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
     dur = (time.time() - start) * 1000
     logger.info(f"{rid} {request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
     return response
@@ -56,3 +60,7 @@ def health():
 async def health_details():
     details = await check_all()
     return {"ok": all(details.values()), **details}
+
+@app.get("/info")
+def info():
+    return {"version": settings.app_version, "git_sha": settings.git_sha}
