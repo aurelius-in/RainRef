@@ -167,7 +167,6 @@ RainRef uses **small, purpose‑built agents**, each boxed by policies (OPA/Rain
 
 ```mermaid
 graph TB
-  graph TB
   A[Ref Event] --> B[Intake Router]
   B --> C[Triage Agent]
   C --> D[KB Grounder]
