@@ -2,7 +2,7 @@
 from models.schemas import RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from models.entities import RefEvent
 import uuid
 
@@ -35,10 +35,16 @@ def ingest_event(evt: RefEventIn, db: Session = Depends(get_db)):
     return {"status": "ok", "id": rid, "normalized": True}
 
 @router.get("/events")
-def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
     offset = (page - 1) * limit
-    rows = db.execute(select(RefEvent).offset(offset).limit(limit)).scalars().all()
-    return {"page": page, "limit": limit, "items": [{"id": r.id, "source": r.source, "channel": r.channel, "text": r.text} for r in rows]}
+    total = db.execute(select(func.count()).select_from(RefEvent)).scalar() or 0
+    stmt = select(RefEvent)
+    if order == "asc":
+        stmt = stmt.order_by(RefEvent.id.asc())
+    else:
+        stmt = stmt.order_by(RefEvent.id.desc())
+    rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
+    return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "source": r.source, "channel": r.channel, "text": r.text} for r in rows]}
 
 @router.get("/events/{event_id}")
 def get_event(event_id: str, db: Session = Depends(get_db)):

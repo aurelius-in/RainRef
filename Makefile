@@ -15,3 +15,6 @@ format:
 
 format-web:
 	cd web && npx prettier --write "src/**/*.{ts,tsx}" "index.html" && npx eslint src --ext .ts,.tsx --fix
+
+typecheck-web:
+	cd web && npm run typecheck

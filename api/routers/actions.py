@@ -3,7 +3,7 @@ from services.policy import check_allow
 from services.beacon import emit_receipt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from models.entities import AuditLog, Action
 from models.schemas import ActionRequest
 import time
@@ -43,7 +43,9 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     return {"ok": True, "beacon_receipt_id": receipt}
 
 @router.get("/history")
-def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
     offset = (page - 1) * limit
-    rows = db.execute(select(Action).offset(offset).limit(limit)).scalars().all()
-    return {"page": page, "limit": limit, "items": [{"id": r.id, "type": r.type, "ticket_id": r.ticket_id} for r in rows]}
+    total = db.execute(select(func.count()).select_from(Action)).scalar() or 0
+    stmt = select(Action).order_by(Action.id.asc() if order == "asc" else Action.id.desc())
+    rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
+    return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "type": r.type, "ticket_id": r.ticket_id} for r in rows]}

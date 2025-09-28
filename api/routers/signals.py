@@ -1,7 +1,8 @@
-﻿from fastapi import APIRouter, Depends
+﻿from fastapi import APIRouter, Depends, Query
 from models.schemas import ProductSignal
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
+from sqlalchemy import select, func
 from models.entities import ProductSignal as Sig
 import uuid
 
@@ -24,3 +25,11 @@ def emit(sig: ProductSignal, db: Session = Depends(get_db)):
     except Exception:
         db.rollback()
     return {"ok": True, "id": sid}
+
+@router.get("/")
+def list_signals(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
+    offset = (page - 1) * limit
+    total = db.execute(select(func.count()).select_from(Sig)).scalar() or 0
+    stmt = select(Sig).order_by(Sig.id.asc() if order == "asc" else Sig.id.desc())
+    rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
+    return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "type": r.type, "origin": r.origin} for r in rows]}

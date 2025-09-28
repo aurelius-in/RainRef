@@ -1,5 +1,6 @@
 ﻿from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from routers import ref_events, support, actions, signals, kb, audit
 import logging
 import time
@@ -13,9 +14,11 @@ app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Si
 
 logging.getLogger().setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
 
+app.add_middleware(GZipMiddleware, compresslevel=5)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
+    allow_credentials=settings.cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
