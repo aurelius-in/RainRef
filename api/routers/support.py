@@ -18,9 +18,21 @@ def get_db():
 @router.post("/answer", response_model=AnswerProposal)
 def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
     ref_event = ref_event or RefEventIn(source="support", channel="inbox", text="help", user_ref=None)
+    # create a ticket first
+    tid = f"t-{uuid.uuid4().hex[:8]}"
+    t = Ticket(id=tid, ref_event_id=None, status="draft")
+    db.add(t)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to create ticket")
+
     proposal, _ = run_flow(db, ref_event)
     if not proposal.citations:
         raise HTTPException(status_code=422, detail="answer must include citations")
+    # attach ticket id
+    proposal = AnswerProposal(**{**proposal.model_dump(), "ticket_id": tid})
     return proposal
 
 @router.post("/tickets")
@@ -40,7 +52,6 @@ def list_tickets(db: Session = Depends(get_db)):
     rows = db.execute(db.query(Ticket).statement).fetchall()
     items = []
     for r in rows:
-        # r is Row with Ticket columns
         d = dict(r._mapping)
         items.append({"id": d.get("id"), "status": d.get("status"), "ref_event_id": d.get("ref_event_id")})
     return {"items": items}

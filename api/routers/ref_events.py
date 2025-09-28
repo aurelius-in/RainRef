@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException, Query
 from models.schemas import RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -35,10 +35,11 @@ def ingest_event(evt: RefEventIn, db: Session = Depends(get_db)):
     return {"status": "ok", "id": rid, "normalized": True}
 
 @router.get("/events")
-def list_events(db: Session = Depends(get_db)):
-    stmt = select(RefEvent).limit(50)
+def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    offset = (page - 1) * limit
+    stmt = select(RefEvent).offset(offset).limit(limit)
     rows = db.execute(stmt).scalars().all()
-    return {"items": [{"id": r.id, "source": r.source, "channel": r.channel, "text": r.text} for r in rows]}
+    return {"page": page, "limit": limit, "items": [{"id": r.id, "source": r.source, "channel": r.channel, "text": r.text} for r in rows]}
 
 @router.get("/events/{event_id}")
 def get_event(event_id: str, db: Session = Depends(get_db)):

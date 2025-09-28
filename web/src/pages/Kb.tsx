@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 
 export default function Kb() {
@@ -27,7 +28,7 @@ export default function Kb() {
       <input type="file" onChange={upload} />
       <ul>
         {items.map((c) => (
-          <li key={c.id}>{c.title}</li>
+          <li key={c.id}><Link to={`/kb/${c.id}`}>{c.title}</Link></li>
         ))}
       </ul>
     </div>

@@ -4,9 +4,10 @@ from routers import ref_events, support, actions, signals, kb, audit
 import os
 import logging
 import time
+import uuid
 from services.health import check_all
 
-app = FastAPI(title="RainRef API")
+app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Signals", version="0.1.0")
 
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
@@ -19,11 +20,13 @@ app.add_middleware(
 logger = logging.getLogger("uvicorn.access")
 
 @app.middleware("http")
-async def log_requests(request: Request, call_next):
+async def request_id_and_log(request: Request, call_next):
+    rid = request.headers.get("X-Request-ID") or f"req-{uuid.uuid4().hex[:8]}"
     start = time.time()
     response = await call_next(request)
+    response.headers["X-Request-ID"] = rid
     dur = (time.time() - start) * 1000
-    logger.info(f"{request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
+    logger.info(f"{rid} {request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
     return response
 
 app.include_router(ref_events.router, prefix="/ref", tags=["ref-events"])

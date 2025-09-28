@@ -17,15 +17,16 @@ def get_db():
         db.close()
 
 @router.get("/cards")
-def search_cards(query: str = Query(""), tags: str = Query(""), db: Session = Depends(get_db)):
-    stmt = select(KbCard).limit(20)
+def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    offset = (page - 1) * limit
+    stmt = select(KbCard).offset(offset).limit(limit)
     rows = db.execute(stmt).scalars().all()
     q = (query or "").lower()
     results = []
     for r in rows:
         if not q or q in (r.title or "").lower() or q in (r.body or "").lower():
             results.append({"id": r.id, "title": r.title, "tags": r.tags or []})
-    return {"results": results}
+    return {"page": page, "limit": limit, "results": results}
 
 @router.get("/cards/{card_id}")
 def get_card(card_id: str, db: Session = Depends(get_db)):
@@ -58,6 +59,33 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
     except Exception:
         db.rollback()
     return {"id": cid, "status": "ok"}
+
+@router.put("/cards/{card_id}")
+def update_card(card_id: str, card: dict, db: Session = Depends(get_db)):
+    obj = db.get(KbCard, card_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="not found")
+    obj.title = card.get("title") or obj.title
+    obj.body = card.get("body") or obj.body
+    obj.tags = card.get("tags") or obj.tags
+    obj.embedding = embed_text(obj.body or "")
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+    return {"id": card_id, "status": "ok"}
+
+@router.delete("/cards/{card_id}")
+def delete_card(card_id: str, db: Session = Depends(get_db)):
+    obj = db.get(KbCard, card_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="not found")
+    try:
+        db.delete(obj)
+        db.commit()
+    except Exception:
+        db.rollback()
+    return {"id": card_id, "deleted": True}
 
 @router.post("/upload")
 async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):

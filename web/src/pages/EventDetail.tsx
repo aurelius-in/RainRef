@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { api } from "../lib/api";
 
 export default function EventDetail() {
@@ -27,6 +27,17 @@ export default function EventDetail() {
         <div>
           <h3>Drafted Answer</h3>
           <pre>{JSON.stringify(answer, null, 2)}</pre>
+          {Array.isArray(answer?.citations) && answer.citations.length > 0 && (
+            <div>
+              <h4>Citations</h4>
+              <ul>
+                {answer.citations.map((c: string) => {
+                  const cid = c.startsWith("kb:") ? c.slice(3) : c;
+                  return <li key={c}><Link to={`/kb/${cid}`}>{c}</Link></li>;
+                })}
+              </ul>
+            </div>
+          )}
           <button onClick={execute}>Execute Suggested Action</button>
         </div>
       )}
