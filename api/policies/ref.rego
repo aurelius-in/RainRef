@@ -1,17 +1,38 @@
 ﻿package rainref.allow
 
-default allow = {"allow": false, "reason": "not allowed"}
+default allow = {"allow": false, "reason": "policy: not allowed"}
+
+# Inputs
+# input.action: { type, params, ticket_id? }
+# input.user: { roles: [..] }
 
 allow = res {
   some t
   t := input.action.type
-  res := {"allow": allowed_action[t], "reason": reason_for[t]}
+  ok := allowed_action[t]
+  res := {"allow": ok, "reason": reason_for[t]}
 }
 
 allowed_action := {
-  "resend_activation": true
+  "resend_activation": true,
+  "note": true,
 }
 
 reason_for := {
-  "resend_activation": "policy: resend activation allowed"
+  "resend_activation": "policy: resend activation allowed",
+  "note": "policy: note allowed",
+}
+
+# Admin bypass example (if roles included)
+allow = {"allow": true, "reason": "policy: admin bypass"} {
+  some roles
+  roles := input.user.roles
+  roles[_] == "admin"
+}
+
+# Deny if missing required param
+deny_reason[reason] {
+  input.action.type == "resend_activation"
+  not input.action.params.user_ref
+  reason := "policy: missing user_ref"
 }

@@ -24,7 +24,7 @@ def cosine(a: List[float], b: List[float]) -> float:
 
 def retrieve(db: Session, query: str, k: int = 5) -> List[Tuple[str, str, float]]:
     rows = db.execute(select(KbCard)).scalars().all()
-    scored: List[Tuple[str, str, float]] = []
+    candidates: List[Tuple[str, str, float]] = []
     # crude query embedding to leverage stored vectors
     from .kb_embed import embed_text
     qv = embed_text(query or "")
@@ -32,8 +32,28 @@ def retrieve(db: Session, query: str, k: int = 5) -> List[Tuple[str, str, float]
         text = (r.title or "") + "\n" + (r.body or "")
         bm25ish = float(token_set_ratio((query or ""), text))
         vecsim = cosine(qv, (r.embedding or [])[:len(qv)])
-        score = 0.7 * (bm25ish/100.0) + 0.3 * vecsim
-        if score > 0:
-            scored.append((r.id, r.body or "", score))
-    scored.sort(key=lambda x: x[2], reverse=True)
-    return scored[:k]
+        # stage 1: lexical
+        lex_score = bm25ish / 100.0
+        # stage 2: semantic rerank
+        hybrid = 0.6 * lex_score + 0.4 * vecsim
+        candidates.append((r.id, r.body or "", hybrid))
+    # take top 2k for rerank; here k may be small so use 5x buffer
+    buffer = max(k * 5, 10)
+    candidates.sort(key=lambda x: x[2], reverse=True)
+    top = candidates[:buffer]
+    # final rerank emphasizes diversity lightly by penalizing near-duplicates
+    final: List[Tuple[str, str, float]] = []
+    seen_ids: set[str] = set()
+    for cid, body, score in top:
+        if cid in seen_ids:
+            continue
+        # simple diversity: reduce score if body is very similar to already-picked
+        penalty = 0.0
+        for _, b2, _ in final:
+            sim = float(token_set_ratio(body[:200], (b2 or "")[:200])) / 100.0
+            if sim > 0.85:
+                penalty += 0.1
+        final.append((cid, body, max(0.0, score - penalty)))
+        seen_ids.add(cid)
+    final.sort(key=lambda x: x[2], reverse=True)
+    return final[:k]
