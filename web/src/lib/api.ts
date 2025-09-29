@@ -11,6 +11,10 @@ api.interceptors.request.use((config) => {
   const rid = `req-${Math.random().toString(36).slice(2, 10)}`;
   config.headers = config.headers || {};
   (config.headers as any)['X-Request-ID'] = rid;
+  const token = localStorage.getItem('rr_token');
+  if (token) {
+    (config.headers as any)['Authorization'] = `Bearer ${token}`;
+  }
   return config;
 });
 

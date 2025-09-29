@@ -1,7 +1,8 @@
 ﻿FROM python:3.11-slim
 WORKDIR /app
 ENV API_PORT=8080
-COPY pyproject.toml /app/pyproject.toml
-RUN pip install --upgrade pip && pip install -e .
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . /app
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "${API_PORT}", "--reload"]
+# Run migrations on container start, then start API
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]

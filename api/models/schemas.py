@@ -21,3 +21,15 @@ class ProductSignal(BaseModel):
     product_area: Optional[str] = None
     strength: float = 0.0
     evidence_refs: List[str] = Field(default_factory=list)
+
+
+class ActionRequest(BaseModel):
+    type: str
+    ticket_id: Optional[str] = None
+    params: Dict[str, Any] = Field(default_factory=dict)
+
+
+class KbCardIn(BaseModel):
+    title: Optional[str] = None
+    body: Optional[str] = None
+    tags: Optional[List[str]] = None

@@ -1,5 +1,5 @@
 ﻿from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, create_engine
 from alembic import context
 import os
 
@@ -13,7 +13,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 def get_url() -> str:
-    return os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/rainref")
+    return os.getenv("DATABASE_URL", "postgresql+psycopg://postgres:postgres@db:5432/rainref")
 
 target_metadata = None
 
@@ -24,8 +24,8 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 def run_migrations_online() -> None:
-    connectable = engine_from_config({}, prefix="sqlalchemy.", poolclass=pool.NullPool, url=get_url())
-    with connectable.connect() as connection:
+    engine = create_engine(get_url(), poolclass=pool.NullPool)
+    with engine.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)
         with context.begin_transaction():
             context.run_migrations()

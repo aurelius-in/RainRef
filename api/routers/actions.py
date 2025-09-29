@@ -9,6 +9,7 @@ from models.entities import AuditLog, Action
 from models.schemas import ActionRequest
 from config import settings
 import time
+from services.auth import require_admin_jwt
 
 router = APIRouter()
 
@@ -22,7 +23,7 @@ def get_db():
         db.close()
 
 @router.post("/execute")
-async def execute(action: ActionRequest, db: Session = Depends(get_db)):
+async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     act = action.model_dump()
     act_type = act.get("type", "any")
     now = time.time()
