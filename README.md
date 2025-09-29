@@ -16,6 +16,7 @@
   <a href="https://www.openpolicyagent.org/"><img alt="OPA / Rego" src="https://img.shields.io/badge/OPA-Rego-000000?logo=openpolicyagent&logoColor=white"></a>
   <a href="https://langchain-ai.github.io/langgraph/"><img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-0.2.x-000000"></a>
  <a href="#"><img alt="Tests" src="https://img.shields.io/badge/tests-passing-brightgreen?logo=pytest&logoColor=white"></a>
+  <a href="https://github.com/aurelius-in/RainRef/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aurelius-in/RainRef/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://black.readthedocs.io/"><img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000"></a>
   <a href="https://docs.astral.sh/ruff/"><img alt="Ruff" src="https://img.shields.io/badge/ruff-linted-orange"></a>
   <a href="https://eslint.org/"><img alt="ESLint + Prettier" src="https://img.shields.io/badge/ESLint-Prettier-4B32C3?logo=eslint&logoColor=white"></a>

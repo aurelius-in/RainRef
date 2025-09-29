@@ -92,7 +92,12 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
         existing.title = card.get("title") or existing.title
         existing.body = card.get("body") or existing.body
         existing.tags = card.get("tags") or existing.tags
-        existing.embedding = embed_text(existing.body or "")
+        vec = embed_text(existing.body or "")
+        existing.embedding = vec
+        try:
+            setattr(existing, "embedding_vec", vec)
+        except Exception:
+            pass
         obj = existing
     else:
         obj = KbCard(
@@ -102,6 +107,10 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
             tags=card.get("tags", []),
             embedding=embed_text(card.get("body", "")),
         )
+        try:
+            setattr(obj, "embedding_vec", embed_text(card.get("body", "")))
+        except Exception:
+            pass
         db.add(obj)
     try:
         db.commit()
@@ -120,7 +129,12 @@ def patch_card(card_id: str, patch: KbCardIn, db: Session = Depends(get_db)):
         obj.body = patch.body
     if patch.tags is not None:
         obj.tags = patch.tags
-    obj.embedding = embed_text(obj.body or "")
+    vec = embed_text(obj.body or "")
+    obj.embedding = vec
+    try:
+        setattr(obj, "embedding_vec", vec)
+    except Exception:
+        pass
     try:
         db.commit()
     except Exception:
@@ -163,6 +177,10 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
         url = blob.upload_bytes("rainref-kb", blob_name, content, file.content_type or "application/octet-stream")
         cid = f"kb-{uuid.uuid4().hex[:6]}"
         obj = KbCard(id=cid, title=file.filename, body=f"Attachment: {url}", tags=["attachment"], embedding=[])
+        try:
+            setattr(obj, "embedding_vec", [])
+        except Exception:
+            pass
         db.add(obj)
         try:
             db.commit()
@@ -187,6 +205,10 @@ def copy_card(card_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="not_found")
     new_id = f"kb-{uuid.uuid4().hex[:6]}"
     dup = KbCard(id=new_id, title=obj.title + " (copy)", body=obj.body, tags=obj.tags or [], embedding=obj.embedding)
+    try:
+        setattr(dup, "embedding_vec", getattr(obj, "embedding_vec", obj.embedding))
+    except Exception:
+        pass
     db.add(dup)
     try:
         db.commit()
