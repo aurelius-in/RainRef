@@ -2,6 +2,8 @@
 import Spinner from "../components/Spinner";
 import { api } from "../lib/api";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
 export default function Tickets() {
   const [items, setItems] = useState<any[] | null>(null);
   const [page, setPage] = useState(1);
@@ -27,6 +29,7 @@ export default function Tickets() {
   return (
     <div>
       <h2>Tickets</h2>
+      <a href={`${API_BASE}/support/tickets/export`} target="_blank" rel="noreferrer">Export CSV</a>
       <div style={{ display: 'flex', gap: 12 }}>
         <div>Open: {counts.open || 0}</div>
         <div>Draft: {counts.draft || 0}</div>

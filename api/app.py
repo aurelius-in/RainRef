@@ -64,3 +64,7 @@ async def health_details():
 @app.get("/info")
 def info():
     return {"version": settings.app_version, "git_sha": settings.git_sha}
+
+@app.head("/healthz")
+def head_health():
+    return {}

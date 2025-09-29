@@ -460,3 +460,9 @@ Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from 
 - Delete an event: DELETE /ref/events/{id}
 - Rate limits included in X-RateLimit-* headers on /action/execute responses.
 - CI: `make ci` runs API tests and web lint/typecheck.
+
+### UI polish
+- Dark mode toggle (persists in browser)
+- Sorting controls on Inbox, Knowledge, and Signals
+- Export links for Events (CSV) and Tickets (CSV)
+- Bulk ingest support for Events via POST /ref/events/bulk
