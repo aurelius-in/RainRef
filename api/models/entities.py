@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Text, Float, JSON
+from sqlalchemy import String, Text, Float, JSON, Integer
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 try:
     from pgvector.sqlalchemy import Vector
@@ -85,5 +85,14 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
     roles: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=False, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class BeaconReceipt(Base):
+    __tablename__ = "beacon_receipts"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    signature: Mapped[str] = mapped_column(Text, nullable=False)
+    timestamp: Mapped[int] = mapped_column(Integer, nullable=False)
+    payload: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
 
