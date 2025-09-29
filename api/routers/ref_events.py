@@ -99,7 +99,7 @@ def delete_event(event_id: str, db: Session = Depends(get_db)):
     return {"ok": True}
 
 @router.get("/events/export")
-def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key)):
+def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key), __: dict = Depends(require_admin_jwt)):
     rows = db.execute(select(RefEvent)).scalars().all()
     header = "id,source,channel,user_ref,text\n"
     lines = [header]
