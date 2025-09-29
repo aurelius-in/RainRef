@@ -6,6 +6,7 @@ export const api = axios.create({
   timeout: 8000,
 });
 
+// Attach a request id for tracing
 api.interceptors.request.use((config) => {
   const rid = `req-${Math.random().toString(36).slice(2, 10)}`;
   config.headers = config.headers || {};
@@ -13,18 +14,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Error toasts with optional disable and 429 friendly message
 api.interceptors.response.use(
   (r) => r,
   (err) => {
     const status = err?.response?.status;
     const msg = typeof err?.response?.data === 'string' ? err.response.data : (err?.response?.data?.detail || 'Request failed');
     const rid = err?.response?.headers?.['x-request-id'];
-    if (rid) {
-      showToast(`Request ${rid}: ${msg}`);
-    } else {
-      showToast(`Error ${status || ''} ${msg}`.trim());
+    const disableToasts = String(import.meta.env.VITE_DISABLE_TOASTS||'').toLowerCase() === 'true';
+    if (!disableToasts) {
+      if (status === 429) { showToast('Take a beat â€” we throttled duplicate clicks.'); }
+      else if (rid) { showToast(`Request ${rid}: ${msg}`); }
+      else { showToast(`Error ${status || ''} ${msg}`.trim()); }
     }
     console.error("API error", status, err?.response?.data, rid);
     return Promise.reject(err);
   }
 );
+
+// Simple one-shot retry for GETs
+api.interceptors.response.use(undefined, async (error) => {
+  const config = error.config || {};
+  const method = (config.method || 'get').toLowerCase();
+  if (method === 'get' && !config._retried) {
+    config._retried = true;
+    return api.request(config);
+  }
+  throw error;
+});

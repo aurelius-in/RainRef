@@ -1,4 +1,7 @@
 ﻿from typing import Dict, Any
 
-def send_message(payload: Dict[str, Any]) -> str:
-    return "ic-123"
+class IntercomAdapter:
+    name = "intercom"
+    def perform(self, payload: Dict[str, Any]) -> str:
+        # simulate sending a message
+        return "ic-" + (payload.get("external_id") or "123")
