@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from routers import ref_events, support, actions, signals, kb, audit, metrics
 from routers import adapters as adapters_router
+from routers import admin as admin_router
 from routers import auth_routes
 import logging
 import time
@@ -58,6 +59,7 @@ app.include_router(audit.router, prefix="/audit", tags=["audit"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(metrics.router, prefix="/metrics", tags=["metrics"])
 app.include_router(adapters_router.router, prefix="/adapters", tags=["adapters"])
+app.include_router(admin_router.router, prefix="/admin", tags=["admin"])
 
 @app.get("/healthz")
 def health():

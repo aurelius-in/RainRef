@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
+import { showToast } from "../lib/toast";
 
 export default function Playbooks() {
   const [items, setItems] = useState<any[] | null>(null);
@@ -29,14 +30,36 @@ export default function Playbooks() {
       </aside>
       <main>
         <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:12 }}>
-          <button onClick={()=>{ if(selected){ navigator.clipboard.writeText(selected.yaml).then(()=>setMessage('Copied YAML'),()=>setMessage('Copy failed')); } }}>Copy</button>
-          <button onClick={()=>{ if(selected){ const b = new Blob([selected.yaml], { type:'text/yaml' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href=u; a.download=`${selected.id}.yaml`; a.click(); URL.revokeObjectURL(u); setMessage('Downloaded YAML'); } }}>Download</button>
-          <button onClick={()=>{ if(!selected) return; const yaml = String(selected.yaml||''); const hasId = /\bid\s*:\s*\S+/.test(yaml); const hasActions = /\bactions\s*:\s*[\s\S]+/.test(yaml); setMessage(hasId && hasActions ? 'Valid playbook (basic)' : 'Invalid: missing id or actions'); }}>Validate</button>
+          <button onClick={()=>{ if(selected){ navigator.clipboard.writeText(selected.yaml).then(()=>{ setMessage('Copied YAML'); showToast('Copied playbook YAML'); },()=>{ setMessage('Copy failed'); showToast('Copy failed'); }); } }}>Copy</button>
+          <button onClick={()=>{ if(selected){ const b = new Blob([selected.yaml], { type:'text/yaml' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href=u; a.download=`${selected.id}.yaml`; a.click(); URL.revokeObjectURL(u); setMessage('Downloaded YAML'); showToast('Downloaded playbook YAML'); } }}>Download</button>
+          <button onClick={()=>{ if(!selected) return; const yaml = String(selected.yaml||''); const hasId = /\bid\s*:\s*\S+/.test(yaml); const hasActions = /\bactions\s*:\s*[\s\S]+/.test(yaml); const ok = hasId && hasActions; const msg = ok ? 'Valid playbook (basic)' : 'Invalid: missing id or actions'; setMessage(msg); showToast(msg); }}>Validate</button>
           <div ref={liveRef} aria-live="polite" style={{ minHeight:20, color:'var(--muted)' }}>{message}</div>
         </div>
         <div className="ref-plate">
           <h3 style={{ marginTop:0 }}>YAML Preview</h3>
-          <pre className="code-block">{selected?.yaml || 'Select a playbook to preview.'}</pre>
+          <pre className="code-block" style={{ overflowX:'auto' }}>
+            <code>
+{(selected?.yaml || 'Select a playbook to preview.').split('\n').map((line, i) => {
+  const trimmed = line.trimStart();
+  const isKey = /^[a-zA-Z_][\w-]*\s*:/.test(trimmed);
+  const isDash = /^-\s/.test(trimmed);
+  const isComment = /^#/.test(trimmed);
+  const keyPart = isKey ? trimmed.split(':',1)[0] : '';
+  const rest = isKey ? trimmed.slice(keyPart.length) : trimmed;
+  const color = isComment ? 'var(--muted)' : isKey ? '#2563eb' : isDash ? '#16a34a' : 'inherit';
+  return (
+    <span key={i} style={{ color }}>
+      {isKey ? line.replace(trimmed, '') + keyPart : line.replace(trimmed, '')}
+      {isKey ? <>
+        <span style={{ color:'#6b7280' }}>{rest.split(/\s+/)[0]}</span>
+        {rest.slice(rest.split(/\s+/)[0].length)}
+      </> : rest}
+      {"\n"}
+    </span>
+  );
+})}
+            </code>
+          </pre>
         </div>
       </main>
     </div>

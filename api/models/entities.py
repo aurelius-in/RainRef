@@ -2,6 +2,11 @@ from sqlalchemy.orm import DeclarativeMeta
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Text, Float, JSON
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+try:
+    from pgvector.sqlalchemy import Vector
+except Exception:  # fallback type hint
+    class Vector:  # type: ignore
+        def __init__(self, *_: int, **__: str) -> None: ...
 from models.db import Base
 from sqlalchemy import Boolean
 
@@ -14,6 +19,8 @@ class KbCard(Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
     tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=False, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
+    # New pgvector column; keep array for backward-compat
+    embedding_vec: Mapped[list[float] | None] = mapped_column(Vector(64), nullable=True)  # type: ignore
     # created_at/updated_at handled by DB defaults in migration
 
 

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { showToast } from "../lib/toast";
 
 export default function Audit() {
   const [items, setItems] = useState<any[] | null>(null);
@@ -31,7 +32,7 @@ export default function Audit() {
                 <td style={{ padding:'6px 8px' }}>{a.result || 'ok'}</td>
                 <td style={{ padding:'6px 8px', display:'flex', gap:8, alignItems:'center' }}>
                   <a href={`/audit/${a.id}`}>Receipt • {a.id?.slice(-6) || '??????'}</a>
-                  <button aria-label="Copy receipt id" onClick={async()=>{ try { await navigator.clipboard.writeText(String(a.id||'')); } catch {} }}>Copy</button>
+                  <button aria-label="Copy receipt id" onClick={async()=>{ try { await navigator.clipboard.writeText(String(a.id||'')); showToast('Copied receipt id'); } catch { showToast('Copy failed'); } }}>Copy</button>
                 </td>
               </tr>
             ))}

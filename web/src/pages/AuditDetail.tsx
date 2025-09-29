@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../lib/api";
+import { showToast } from "../lib/toast";
 
 export default function AuditDetail() {
   const { id } = useParams();
@@ -9,7 +10,7 @@ export default function AuditDetail() {
     if (!id) return;
     api.get(`/audit/${id}`).then(r => setRec(r.data)).catch(()=>setRec({ receipt_id: id, verified: false }));
   }, [id]);
-  const copy = async () => { try { await navigator.clipboard.writeText(String(id)); } catch {} };
+  const copy = async () => { try { await navigator.clipboard.writeText(String(id)); showToast('Copied receipt id'); } catch { showToast('Copy failed'); } };
   return (
     <div className="ref-plate">
       <h3 style={{ marginTop:0 }}>Receipt</h3>
@@ -26,13 +27,15 @@ export default function AuditDetail() {
               <div style={{ color:'var(--muted)' }}>Created At</div>
               <div>{new Date(rec.created_at).toLocaleString()}</div>
             </>)}
-            {rec.details && (<>
+            {rec.verification_details && (<>
               <div style={{ color:'var(--muted)' }}>Issuer</div>
-              <div>{rec.details.issuer || '—'}</div>
-              <div style={{ color:'var(--muted)' }}>Signature</div>
-              <div className="code-block" style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{rec.details.signature || '—'}</div>
+              <div>{rec.verification_details.issuer || '—'}</div>
+              <div style={{ color:'var(--muted)' }}>Reason</div>
+              <div>{rec.verification_details.reason || '—'}</div>
+              <div style={{ color:'var(--muted)' }}>Signature Match</div>
+              <div>{String(rec.verification_details.signature_match ?? '—')}</div>
               <div style={{ color:'var(--muted)' }}>Timestamp</div>
-              <div>{rec.details.ts || '—'}</div>
+              <div>{rec.verification_details.timestamp ? new Date(rec.verification_details.timestamp*1000).toLocaleString() : '—'}</div>
             </>)}
           </div>
           <h4 style={{ marginTop: 16 }}>Raw</h4>

@@ -13,6 +13,11 @@ export default function Settings() {
   const [adapterName, setAdapterName] = useState('zendesk');
   const [adapterPayload, setAdapterPayload] = useState<string>(`{\n  "subject": "Test from RainRef",\n  "body": "Hello",\n  "priority": "normal"\n}`);
   const [adapterResult, setAdapterResult] = useState<string>('');
+  const [adapterCfg, setAdapterCfg] = useState<any>({
+    zendesk_base_url: '', zendesk_token: '',
+    intercom_base_url: '', intercom_token: '',
+    github_repo: '', github_token: ''
+  });
   useEffect(() => {
     api.get("/healthz/details").then(r => setDetails(r.data)).catch(() => setDetails({ ok: false }));
     api.get("/info").then(r => setInfo(r.data)).catch(() => setInfo({ version: "?", git_sha: "?", env: "dev" }));
@@ -99,6 +104,57 @@ export default function Settings() {
             </label>
           </div>
         </div>
+        {who?.role === 'admin' && (
+          <div className="ref-plate" style={{ marginBottom: 12 }}>
+            <h4 style={{ marginTop:0 }}>Adapter Settings</h4>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+              <label>
+                <div>Zendesk Base URL</div>
+                <input value={adapterCfg.zendesk_base_url || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, zendesk_base_url: e.target.value}))} />
+              </label>
+              <label>
+                <div>Zendesk Token</div>
+                <input type="password" value={adapterCfg.zendesk_token || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, zendesk_token: e.target.value}))} />
+              </label>
+              <label>
+                <div>Intercom Base URL</div>
+                <input value={adapterCfg.intercom_base_url || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, intercom_base_url: e.target.value}))} />
+              </label>
+              <label>
+                <div>Intercom Token</div>
+                <input type="password" value={adapterCfg.intercom_token || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, intercom_token: e.target.value}))} />
+              </label>
+              <label>
+                <div>GitHub Repo (owner/name)</div>
+                <input value={adapterCfg.github_repo || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, github_repo: e.target.value}))} />
+              </label>
+              <label>
+                <div>GitHub Token</div>
+                <input type="password" value={adapterCfg.github_token || ''} onChange={e=>setAdapterCfg((s:any)=>({...s, github_token: e.target.value}))} />
+              </label>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:12 }}>
+              <button onClick={async()=>{
+                try {
+                  const r = await api.get('/admin/adapters/config');
+                  setAdapterCfg(r.data || {});
+                  setMessage('Loaded adapter settings');
+                } catch (e:any) {
+                  setMessage(`Load failed: ${e?.response?.data?.detail || e?.message}`);
+                }
+              }}>Load</button>
+              <button onClick={async()=>{
+                try {
+                  await api.post('/admin/adapters/config', adapterCfg);
+                  setMessage('Saved adapter settings');
+                } catch (e:any) {
+                  setMessage(`Save failed: ${e?.response?.data?.detail || e?.message}`);
+                }
+              }}>Save</button>
+              <div aria-live="polite" style={{ color:'var(--muted)' }}>{message}</div>
+            </div>
+          </div>
+        )}
         <h3>Health</h3>
         <pre>{JSON.stringify(details, null, 2)}</pre>
         <h3>KB Tags</h3>

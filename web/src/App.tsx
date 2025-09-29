@@ -11,6 +11,7 @@ import Health from "./pages/Health";
 import Signals from "./pages/Signals";
 import Audit from "./pages/Audit";
 import Actions from "./pages/Actions";
+import Answer from "./pages/Answer";
 import Tickets from "./pages/Tickets";
 import Settings from "./pages/Settings";
 import Metrics from "./pages/Metrics";
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/signals" element={<Signals />} />
               <Route path="/audit" element={<Audit />} />
               <Route path="/playbooks" element={<Playbooks />} />
+              <Route path="/events/current" element={<Answer />} />
               <Route path="/health" element={<Health />} />
               <Route path="/metrics" element={<Metrics />} />
               <Route path="/settings" element={<Settings />} />
