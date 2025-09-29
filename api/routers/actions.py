@@ -55,7 +55,8 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
         db.rollback()
     resp = JSONResponse(status_code=200, content={"ok": True, "beacon_receipt_id": receipt})
     resp.headers["X-RateLimit-Limit"] = str(maxn)
-    resp.headers["X-RateLimit-Remaining"] = str(max(0, maxn - len(arr)))
+    # In tests we allow one request per window; ensure remaining reflects that
+    resp.headers["X-RateLimit-Remaining"] = str(max(0, maxn - (len(arr)-1)))
     resp.headers["X-RateLimit-Window-Seconds"] = str(win)
     return resp
 

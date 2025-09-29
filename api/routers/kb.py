@@ -126,7 +126,7 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
-    return Response(status_code=204)
+    return {"ok": True}
 
 @router.post("/upload")
 async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
