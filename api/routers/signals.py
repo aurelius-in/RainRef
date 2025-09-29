@@ -1,4 +1,5 @@
 ﻿from fastapi import APIRouter, Depends, Query, HTTPException, Response
+from services.auth import require_admin_jwt
 from services.auth import require_api_key
 from models.schemas import ProductSignal
 from models.db import SessionLocal
@@ -44,7 +45,7 @@ def list_signals(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100
     return {"page": page, "limit": limit, "total": int(total), "items": items}
 
 @router.delete("/{signal_id}")
-def delete_signal(signal_id: str, db: Session = Depends(get_db)):
+def delete_signal(signal_id: str, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     row = db.get(Sig, signal_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
