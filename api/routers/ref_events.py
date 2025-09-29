@@ -86,7 +86,7 @@ def list_events(
     return {"page": page, "limit": limit, "total": int(total), "items": items}
 
 @router.delete("/events/{event_id}")
-def delete_event(event_id: str, db: Session = Depends(get_db)):
+def delete_event(event_id: str, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     row = db.get(RefEvent, event_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
