@@ -123,3 +123,15 @@ def export_tickets(db: Session = Depends(get_db)):
 	for t in rows:
 		lines.append(f"{t.id},{t.status},{t.ref_event_id or ''}\n")
 	return Response(content="".join(lines), media_type="text/csv")
+
+
+@router.get("/tickets/counts")
+def ticket_counts(db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
+	# Return counts by status to support UI badges
+	rows = db.execute(select(Ticket.status, func.count()).group_by(Ticket.status)).all()
+	out = {str(k): int(v) for (k, v) in rows}
+	return {
+		"open": out.get("open", 0),
+		"draft": out.get("draft", 0),
+		"closed": out.get("closed", 0),
+	}

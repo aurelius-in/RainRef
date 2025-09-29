@@ -31,6 +31,7 @@ export default function Playbooks() {
         <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:12 }}>
           <button onClick={()=>{ if(selected){ navigator.clipboard.writeText(selected.yaml).then(()=>setMessage('Copied YAML'),()=>setMessage('Copy failed')); } }}>Copy</button>
           <button onClick={()=>{ if(selected){ const b = new Blob([selected.yaml], { type:'text/yaml' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href=u; a.download=`${selected.id}.yaml`; a.click(); URL.revokeObjectURL(u); setMessage('Downloaded YAML'); } }}>Download</button>
+          <button onClick={()=>{ if(!selected) return; const yaml = String(selected.yaml||''); const hasId = /\bid\s*:\s*\S+/.test(yaml); const hasActions = /\bactions\s*:\s*[\s\S]+/.test(yaml); setMessage(hasId && hasActions ? 'Valid playbook (basic)' : 'Invalid: missing id or actions'); }}>Validate</button>
           <div ref={liveRef} aria-live="polite" style={{ minHeight:20, color:'var(--muted)' }}>{message}</div>
         </div>
         <div className="ref-plate">
