@@ -8,7 +8,7 @@
 
 #### *The Ref for real user problems: cited answers, safe actions, and clear product signals.*
 
-RainRef is a standalone app that connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
+RainRef connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
 
 No hallucinations. Every answer has a source. Every action has a receipt.
 
@@ -455,3 +455,8 @@ Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from 
 ### CSV export and pagination
 - Export events: GET /ref/events/export
 - Lists include `total` for pagination; UI shows Prev/Next controls.
+
+### More tools
+- Delete an event: DELETE /ref/events/{id}
+- Rate limits included in X-RateLimit-* headers on /action/execute responses.
+- CI: `make ci` runs API tests and web lint/typecheck.
