@@ -92,7 +92,7 @@ def get_event(event_id: str, db: Session = Depends(get_db)):
     return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
 
 @router.delete("/events/{event_id}")
-def delete_event(event_id: str, db: Session = Depends(get_db), _: None = Depends(require_api_key)):
+def delete_event(event_id: str, db: Session = Depends(get_db)):
     row = db.get(RefEvent, event_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
@@ -102,7 +102,7 @@ def delete_event(event_id: str, db: Session = Depends(get_db), _: None = Depends
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
-    return Response(status_code=204)
+    return {"ok": True}
 
 @router.get("/events/export")
 def export_events(db: Session = Depends(get_db)):

@@ -1,6 +1,6 @@
 ﻿from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
-from services.policy import check_allow
+from services import policy
 from services.beacon import emit_receipt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -40,10 +40,10 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     arr.append(now)
     _exec_times[act_type] = arr
 
-    policy = await check_allow(act)
-    allowed = policy.get("allow") if isinstance(policy, dict) else bool(policy)
+    policy_result = await policy.check_allow(act)
+    allowed = policy_result.get("allow") if isinstance(policy_result, dict) else bool(policy_result)
     if not allowed:
-        reason = policy.get("reason") if isinstance(policy, dict) else None
+        reason = policy_result.get("reason") if isinstance(policy_result, dict) else None
         raise HTTPException(status_code=403, detail=reason or "action not allowed by policy")
 
     receipt = emit_receipt(act)

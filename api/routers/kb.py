@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from models.db import SessionLocal
 from models.entities import KbCard
-from services.blob import upload_bytes
+from services import blob
 from services.kb_embed import embed_text
 from models.schemas import KbCardIn
 import uuid
@@ -100,6 +100,21 @@ def patch_card(card_id: str, patch: KbCardIn, db: Session = Depends(get_db)):
         db.rollback()
     return {"id": card_id, "status": "ok"}
 
+@router.put("/cards/{card_id}")
+def put_card(card_id: str, payload: dict, db: Session = Depends(get_db)):
+    obj = db.get(KbCard, card_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="not_found")
+    obj.title = payload.get("title", obj.title)
+    obj.body = payload.get("body", obj.body)
+    obj.tags = payload.get("tags", obj.tags)
+    obj.embedding = embed_text(obj.body or "")
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+    return {"id": card_id, "status": "ok"}
+
 @router.delete("/cards/{card_id}")
 def delete_card(card_id: str, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
@@ -118,7 +133,7 @@ async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         content = await file.read()
         blob_name = f"kb-{uuid.uuid4().hex[:8]}-{file.filename}"
-        url = upload_bytes("rainref-kb", blob_name, content, file.content_type or "application/octet-stream")
+        url = blob.upload_bytes("rainref-kb", blob_name, content, file.content_type or "application/octet-stream")
         cid = f"kb-{uuid.uuid4().hex[:6]}"
         obj = KbCard(id=cid, title=file.filename, body=f"Attachment: {url}", tags=["attachment"], embedding=[])
         db.add(obj)
