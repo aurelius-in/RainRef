@@ -1,0 +1,26 @@
+fastapi
+uvicorn[standard]
+pydantic>=2.6
+pydantic-settings
+sqlalchemy>=2.0
+pgvector>=0.3.5
+psycopg[binary,pool]>=3.2
+alembic
+python-multipart
+azure-storage-blob
+httpx
+tenacity
+opentelemetry-sdk
+opentelemetry-instrumentation-fastapi
+opentelemetry-exporter-otlp
+langchain
+langgraph==0.2.24
+scikit-learn
+numpy
+jinja2
+pypdf
+python-docx
+rapidfuzz
+PyJWT[crypto]
+uvloop; platform_system != "Windows"
+

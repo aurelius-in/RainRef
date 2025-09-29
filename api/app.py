@@ -2,6 +2,7 @@
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from routers import ref_events, support, actions, signals, kb, audit
+from routers import auth_routes
 import logging
 import time
 import uuid
@@ -51,6 +52,7 @@ app.include_router(actions.router, prefix="/action", tags=["action"])
 app.include_router(signals.router, prefix="/signals", tags=["signals"])
 app.include_router(kb.router, prefix="/kb", tags=["kb"])
 app.include_router(audit.router, prefix="/audit", tags=["audit"])
+app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 
 @app.get("/healthz")
 def health():

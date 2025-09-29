@@ -1,6 +1,36 @@
 ﻿:root {
-  --brand-bg: #0a2540;
-  --brand-fg: #ffffff;
-  --brand-border: #e5e7eb;
+  --bg: #ffffff; --fg: #000000; --panel: #f7f7f7; --hair: #e5e5e5;
+  --muted: #666666; --ok: #111111; --stripe-dark: #eeeeee; --stripe-light: #ffffff;
 }
-body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+:root[data-theme="dark"] {
+  --bg: #000000; --fg: #ffffff; --panel: #0d0d0d; --hair: #222222;
+  --muted: #aaaaaa; --ok: #ffffff; --stripe-dark: #111111; --stripe-light: #222222;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: var(--bg); color: var(--fg); }
+a { color: inherit; }
+button, input, select { font: inherit; }
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* Referee stripe helper - only for safe zones */
+.ref-stripes {
+  background-image: repeating-linear-gradient(90deg, var(--stripe-dark) 0, var(--stripe-dark) 12px, var(--stripe-light) 12px, var(--stripe-light) 24px);
+  opacity: 0.15;
+}
+.ref-plate { background: var(--panel); padding: 16px; border: 1px solid var(--hair); }
+.code-block { background: var(--panel); border: 1px solid var(--hair); padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+
+/* Layout containers */
+.app-shell { display: grid; grid-template-columns: 72px 1fr 520px; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 16px 24px; }
+.left-rail { width: 72px; border-right: 1px solid var(--hair); background: var(--bg); }
+.main { min-height: calc(100vh - 64px); }
+.drawer { width: 520px; border-left: 1px solid var(--hair); background: var(--panel); }
+
+/* Focus visibility */
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }

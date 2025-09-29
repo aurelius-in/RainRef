@@ -1,11 +1,12 @@
 ﻿import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Spinner from "../components/Spinner";
 import { api } from "../lib/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 export default function Kb() {
+  const [params] = useSearchParams();
   const [items, setItems] = useState<any[] | null>(null);
   const [q, setQ] = useState("");
   const [tags, setTags] = useState("");
@@ -21,9 +22,10 @@ export default function Kb() {
     setTotal(r.data.total || 0);
   };
   useEffect(() => {
+    const qp = params.get('q'); if (qp) setQ(qp);
     refresh();
     api.get("/kb/stats").then(r => setStats(r.data)).catch(() => setStats({}));
-  }, [page, order]);
+  }, [page, order, params]);
 
   return (
     <div>

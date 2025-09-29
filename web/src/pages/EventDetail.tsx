@@ -7,6 +7,9 @@ export default function EventDetail() {
   const [event, setEvent] = useState<any>(null);
   const [answer, setAnswer] = useState<any>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
+  const [tab, setTab] = useState<'answer'|'evidence'|'history'>('answer');
+  const [evidence, setEvidence] = useState<any[] | null>(null);
+  const [history, setHistory] = useState<any[] | null>(null);
   useEffect(() => {
     api.get(`/ref/events/${id}`).then(r => setEvent(r.data));
   }, [id]);
@@ -16,8 +19,10 @@ export default function EventDetail() {
   };
   const execute = async () => {
     if (!answer?.actions_suggested?.length) return;
-    await api.post("/action/execute", answer.actions_suggested[0]);
-    setOkMsg("Action executed â€” receipt recorded");
+    const r = await api.post("/action/execute", answer.actions_suggested[0]);
+    const rid = r?.data?.beacon_receipt_id || 'receipt';
+    try { await navigator.clipboard.writeText(rid); } catch {}
+    setOkMsg(`Receipt • ${rid} (copied)`);
     setTimeout(() => setOkMsg(null), 3000);
   };
   const closeTicket = async () => {
@@ -26,32 +31,129 @@ export default function EventDetail() {
     setOkMsg("Ticket closed");
     setTimeout(() => setOkMsg(null), 3000);
   };
+
+  // Load Evidence and History on demand
+  useEffect(() => {
+    const loadEvidence = async () => {
+      if (!answer?.citations?.length) { setEvidence([]); return; }
+      try {
+        const ids: string[] = (answer.citations as string[]).map((c: string) => c.startsWith('kb:') ? c.slice(3) : c);
+        const results = await Promise.all(ids.map(cid => api.get(`/kb/cards/${cid}`).then(r => r.data).catch(() => null)));
+        setEvidence(results.filter(Boolean));
+      } catch {
+        setEvidence([]);
+      }
+    };
+    const loadHistory = async () => {
+      if (!answer?.ticket_id) { setHistory([]); return; }
+      try {
+        const r = await api.get(`/support/tickets/${answer.ticket_id}/actions`);
+        setHistory(r.data.items || []);
+      } catch {
+        setHistory([]);
+      }
+    };
+    if (tab === 'evidence') loadEvidence();
+    if (tab === 'history') loadHistory();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, JSON.stringify(answer?.citations), answer?.ticket_id]);
   return (
-    <div>
-      <h2>Event</h2>\n      <button onClick={async () => { await api.delete(/ref/events/); alert('Event deleted'); }}>Delete Event</button>
-      {okMsg && <div style={{ background: '#ecfdf5', color: '#065f46', padding: 8, borderRadius: 4 }}>{okMsg}</div>}
-      <pre>{JSON.stringify(event, null, 2)}</pre>
-      <button onClick={draft}>Draft Answer</button>
-      {answer && (
-        <div>
-          <h3>Drafted Answer</h3>
-          {answer?.ticket_id && <div>Ticket: {answer.ticket_id}</div>}
-          <pre>{JSON.stringify(answer, null, 2)}</pre>
-          {Array.isArray(answer?.citations) && answer.citations.length > 0 && (
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 360px', gap:24 }}>
+      <section>
+        <header style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <h2 style={{ margin:0 }}>Answer</h2>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={draft}>Propose Answer</button>
+            {answer?.ticket_id && <button onClick={closeTicket}>Close</button>}
+          </div>
+        </header>
+        {okMsg && <div className="ref-plate" role="status">{okMsg}</div>}
+        <article style={{ border:'1px solid var(--hair)', background:'var(--panel)', padding:16, minHeight:240 }}>
+          <div style={{ display:'flex', gap:12, borderBottom:'1px solid var(--hair)', marginBottom:12 }} role="tablist"
+               onKeyDown={(e)=>{
+                 const order = ['answer','evidence','history'] as const;
+                 const idx = order.indexOf(tab);
+                 if (e.key === 'ArrowRight') setTab(order[(idx+1)%order.length]);
+                 if (e.key === 'ArrowLeft') setTab(order[(idx+order.length-1)%order.length]);
+               }}>
+            <button role="tab" aria-selected={tab==='answer'} onClick={()=>setTab('answer')}>Answer</button>
+            <button role="tab" aria-selected={tab==='evidence'} onClick={()=>setTab('evidence')}>Evidence</button>
+            <button role="tab" aria-selected={tab==='history'} onClick={()=>setTab('history')}>History</button>
+          </div>
+          {tab==='answer' ? (
+            answer ? (
+              <div>
+                <div style={{ marginBottom:8, color:'var(--muted)' }}>State: Draft</div>
+                <div style={{ whiteSpace:'pre-wrap' }}>{answer.answer_md || 'No content yet.'}</div>
+                {Array.isArray(answer?.citations) && answer.citations.length > 0 && (
+                  <div style={{ marginTop:12 }}>
+                    {answer.citations.map((c: string) => {
+                      const cid = c.startsWith("kb:") ? c.slice(3) : c;
+                      return <Link key={c} to={`/kb/${cid}`} style={{ border:'1px solid var(--hair)', padding:'2px 6px', marginRight:6, display:'inline-block' }}>{c}</Link>;
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ color:'var(--muted)' }}>Click “Propose Answer” to draft a cited reply.</div>
+            )
+          ) : tab==='evidence' ? (
             <div>
-              <h4>Citations</h4>
-              <ul>
-                {answer.citations.map((c: string) => {
-                  const cid = c.startsWith("kb:") ? c.slice(3) : c;
-                  return <li key={c}><Link to={`/kb/${cid}`}>{c}</Link></li>;
-                })}
-              </ul>
+              {!evidence ? <div style={{ color:'var(--muted)' }}>Loading…</div> : evidence.length === 0 ? (
+                <div style={{ color:'var(--muted)' }}>No evidence yet.</div>
+              ) : (
+                <ul>
+                  {evidence.map((k:any) => (
+                    <li key={k.id} style={{ marginBottom:8 }}>
+                      <strong>{k.title}</strong>
+                      <div style={{ color:'var(--muted)' }}>{String(k.body||'').slice(0,140)}…</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <div>
+              {!history ? <div style={{ color:'var(--muted)' }}>Loading…</div> : history.length === 0 ? (
+                <div style={{ color:'var(--muted)' }}>No history yet.</div>
+              ) : (
+                <ul>
+                  {history.map((h:any) => (
+                    <li key={h.id} style={{ marginBottom:6 }}>
+                      <code>{h.type}</code> — ticket {h.ticket_id || '—'}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
-          <button onClick={execute}>Execute Suggested Action</button>
-          {answer?.ticket_id && <button onClick={closeTicket}>Close Ticket</button>}
+        </article>
+      </section>
+      <aside>
+        <div className="ref-plate">
+          <h3 style={{ marginTop:0 }}>Suggested Actions</h3>
+          {answer?.actions_suggested?.length ? (
+            <div>
+              {answer.actions_suggested.map((a:any, idx:number) => (
+                <div key={idx} style={{ borderTop:'1px solid var(--hair)', paddingTop:8, marginTop:8 }}>
+                  <div style={{ display:'flex', justifyContent:'space-between' }}>
+                    <strong>{a.type}</strong>
+                    <span style={{ border:'1px solid var(--hair)', padding:'2px 6px' }}>Policy: Pass</span>
+                  </div>
+                  <pre style={{ background:'transparent' }}>{JSON.stringify(a.params||{}, null, 2)}</pre>
+                  <button onClick={execute}>Execute</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ color:'var(--muted)' }}>No actions yet.</div>
+          )}
         </div>
-      )}
+        <div style={{ marginTop:12 }} className="ref-plate">
+          <h4 style={{ marginTop:0 }}>Related KB</h4>
+          <div style={{ color:'var(--muted)' }}>Shown after answer is proposed.</div>
+        </div>
+      </aside>
     </div>
   );
 }
