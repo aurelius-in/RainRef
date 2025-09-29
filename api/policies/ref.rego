@@ -10,6 +10,20 @@ allow = res {
   some t
   t := input.action.type
   ok := allowed_action(t)
+  reason := reason_for[t]
+  not ok
+  # Override reason with first deny_reason if present when not allowed
+  some dr
+  dr := deny_reason_first
+  reason := dr
+  res := {"allow": ok, "reason": reason}
+}
+
+allow = res {
+  some t
+  t := input.action.type
+  ok := allowed_action(t)
+  ok
   res := {"allow": ok, "reason": reason_for[t]}
 }
 
@@ -48,4 +62,10 @@ deny_reason[reason] {
   input.action.type == "resend_activation"
   not input.action.params.user_ref
   reason := "policy: missing user_ref"
+}
+
+deny_reason_first := r {
+  some rr
+  deny_reason[rr]
+  r := rr
 }

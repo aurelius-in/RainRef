@@ -8,15 +8,23 @@ export default function Actions() {
   const [items, setItems] = useState<any[] | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [who, setWho] = useState<any>(null);
   const limit = 10;
   useEffect(() => {
+    api.get('/auth/whoami').then(r => setWho(r.data)).catch(()=>setWho(null));
+  }, []);
+  useEffect(() => {
+    if (who?.role !== 'admin') return;
     setItems(null);
     api.get("/action/history", { params: { page, limit } }).then(r => { setItems(r.data.items || []); setTotal(r.data.total || 0); }).catch(() => setItems([]));
   }, [page]);
   return (
     <div>
       <h2>Actions</h2>
-      {items === null ? <Spinner /> : (
+      {who?.role !== 'admin' && (
+        <div className="ref-plate" role="status" style={{ marginBottom: 12 }}>Admin role required to view action history.</div>
+      )}
+      {who?.role === 'admin' ? (items === null ? <Spinner /> : (
         <>
           <ul>
             {items.map(a => (
@@ -29,7 +37,7 @@ export default function Actions() {
             <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(total / limit)}>Next</button>
           </div>
         </>
-      )}
+      )) : null}
     </div>
   );
 }

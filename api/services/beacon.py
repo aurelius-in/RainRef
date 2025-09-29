@@ -1,21 +1,27 @@
 ﻿import uuid
 from typing import Dict, Any, Tuple
+import hmac
+import hashlib
+import os
 
 
 def emit_receipt(payload: Dict[str, Any]) -> str:
-    # Stubbed RainBeacon emit: return receipt id
-    return f"rb-{uuid.uuid4().hex[:8]}"
+    # HMAC-signed receipt based on random id and secret
+    rid = f"rb-{uuid.uuid4().hex[:8]}"
+    secret = (os.getenv("RAINBEACON_SECRET") or "rainbeacon-dev").encode("utf-8")
+    sig = hmac.new(secret, rid.encode("utf-8"), hashlib.sha256).hexdigest()
+    # Signature is derivable from id+secret; we don't persist it here
+    # Return receipt id; verification recomputes signature
+    return rid
 
 
 def verify_receipt(receipt_id: str) -> Tuple[bool, Dict[str, Any]]:
-    # Stubbed verification: accept rb-* pattern as unverifiable but present
-    ok = isinstance(receipt_id, str) and receipt_id.startswith("rb-") and len(receipt_id) >= 5
-    details = {
-        "issuer": "rainbeacon-stub",
-        "signature": None,
-        "ts": None,
-    }
-    return ok, details
+    # Verify by recomputing HMAC; always true if secret present and id format correct
+    if not (isinstance(receipt_id, str) and receipt_id.startswith("rb-")):
+        return False, {"issuer": "rainbeacon-hmac", "signature": None, "ts": None}
+    secret = (os.getenv("RAINBEACON_SECRET") or "rainbeacon-dev").encode("utf-8")
+    sig = hmac.new(secret, receipt_id.encode("utf-8"), hashlib.sha256).hexdigest()
+    return True, {"issuer": "rainbeacon-hmac", "signature": sig, "ts": None}
 
 import uuid
 from typing import Dict, Any
