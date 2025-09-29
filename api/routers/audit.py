@@ -3,6 +3,7 @@ from models.db import SessionLocal
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from models.entities import AuditLog
+from services.beacon import verify_receipt
 
 router = APIRouter()
 
@@ -18,7 +19,13 @@ def get_receipt(receipt_id: str, db: Session = Depends(get_db)):
     row = db.get(AuditLog, receipt_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
-    return {"receipt_id": row.receipt_id, "verified": row.verified}
+    ok, details = verify_receipt(row.receipt_id)
+    return {
+        "receipt_id": row.receipt_id,
+        "verified": bool(row.verified) and ok,
+        "details": details,
+        "created_at": getattr(row, "created_at", None),
+    }
 
 @router.get("/")
 def list_audit(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):

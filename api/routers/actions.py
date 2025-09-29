@@ -1,8 +1,9 @@
-﻿from fastapi import APIRouter, HTTPException, Depends, Query
+﻿from fastapi import APIRouter, HTTPException, Depends, Query, Header
 from fastapi.responses import JSONResponse
 from services import policy
 import json
 from services.beacon import emit_receipt
+from services.auth import require_admin_jwt, verify_jwt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
@@ -10,7 +11,6 @@ from models.entities import AuditLog, Action
 from models.schemas import ActionRequest
 from config import settings
 import time
-from services.auth import require_admin_jwt
 
 router = APIRouter()
 
@@ -24,7 +24,7 @@ def get_db():
         db.close()
 
 @router.post("/execute")
-async def execute(action: ActionRequest, db: Session = Depends(get_db)):
+async def execute(action: ActionRequest, db: Session = Depends(get_db), authorization: str | None = Header(None), __: dict = Depends(require_admin_jwt)):
     act = action.model_dump()
     act_type = act.get("type", "any")
     act_key = f"{act_type}:{json.dumps(act.get('params') or {}, sort_keys=True)}"
@@ -42,7 +42,13 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     arr.append(now)
     _exec_times[act_key] = arr
 
-    policy_result = await policy.check_allow(act)
+    user_claims = {}
+    if authorization and authorization.lower().startswith("bearer "):
+        try:
+            user_claims = verify_jwt(authorization.split(" ", 1)[1]) or {}
+        except Exception:
+            user_claims = {}
+    policy_result = await policy.check_allow(act, user=user_claims)
     allowed = policy_result.get("allow") if isinstance(policy_result, dict) else bool(policy_result)
     if not allowed:
         reason = policy_result.get("reason") if isinstance(policy_result, dict) else None
