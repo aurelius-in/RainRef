@@ -1,6 +1,7 @@
 ﻿from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
 from services import policy
+import json
 from services.beacon import emit_receipt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -26,10 +27,11 @@ def get_db():
 async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     act = action.model_dump()
     act_type = act.get("type", "any")
+    act_key = f"{act_type}:{json.dumps(act.get('params') or {}, sort_keys=True)}"
     now = time.time()
     win = settings.rate_limit_window_sec
     maxn = settings.rate_limit_per_window
-    arr = _exec_times.get(act_type, [])
+    arr = _exec_times.get(act_key, [])
     arr = [t for t in arr if now - t < win]
     if len(arr) >= maxn:
         resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
@@ -38,7 +40,7 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db)):
         resp.headers["X-RateLimit-Window-Seconds"] = str(win)
         return resp
     arr.append(now)
-    _exec_times[act_type] = arr
+    _exec_times[act_key] = arr
 
     policy_result = await policy.check_allow(act)
     allowed = policy_result.get("allow") if isinstance(policy_result, dict) else bool(policy_result)
