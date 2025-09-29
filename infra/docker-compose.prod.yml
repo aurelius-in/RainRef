@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-rainref}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  opa:
+    image: openpolicyagent/opa:latest
+    command: ["run", "--server", "/policies"]
+    volumes:
+      - ../api/policies:/policies
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: ["azurite", "-l", "/data", "--blobHost", "0.0.0.0"]
+    volumes:
+      - ./azurite:/data
+
+  api:
+    build: ../api
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://postgres:postgres@db:5432/rainref}
+      BLOB_CONN_STRING: ${AZURE_BLOB_CONN_STRING}
+      OPA_URL: http://opa:8181
+      ALLOWED_ORIGINS: '["*"]'
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      REQUIRE_JWT_FOR_ADMIN: ${REQUIRE_JWT_FOR_ADMIN:-true}
+      RAINBEACON_SECRET: ${RAINBEACON_SECRET:-rainbeacon-prod}
+    ports: ["8080:8080"]
+    depends_on: [db, opa, azurite]
+
+  web:
+    build: ../web
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports: ["5173:5173"]
+    depends_on: [api]
+
+volumes:
+  db_data:
+
+

@@ -1,6 +1,6 @@
 ﻿from fastapi import APIRouter, Query, Depends, UploadFile, File, HTTPException, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text as sql_text
 from models.db import SessionLocal
 from models.entities import KbCard
 from services import blob
@@ -22,22 +22,33 @@ def get_db():
 
 @router.get("/cards")
 def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
-    q = (query or "").lower()
+    q = (query or "").strip()
     tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
-    # Fetch all, filter in memory, then paginate to ensure correct search results
-    rows = db.execute(select(KbCard)).scalars().all()
-    filtered = []
-    for r in rows:
-        matches_q = (not q) or q in (r.title or "").lower() or q in (r.body or "").lower()
-        matches_tags = (not tag_list) or (set(tag_list).issubset(set((r.tags or []))))
-        if matches_q and matches_tags:
-            filtered.append(r)
-    # Sort
-    filtered.sort(key=lambda r: r.id, reverse=(order != "asc"))
-    total = len(filtered)
     offset = (page - 1) * limit
-    page_items = filtered[offset: offset + limit]
-    results = [{"id": r.id, "title": r.title, "tags": r.tags or []} for r in page_items]
+
+    # Prefer Postgres full-text if a query is provided
+    if q:
+        # WHERE to_tsvector('english', title || ' ' || body) @@ plainto_tsquery(:q)
+        # ORDER BY ts_rank(...) and id for tie-breaker
+        where_clause = sql_text("to_tsvector('english', title || ' ' || body) @@ plainto_tsquery(:q)")
+        base = select(KbCard).where(where_clause).order_by(sql_text("ts_rank(to_tsvector('english', title || ' ' || body), plainto_tsquery(:q)) DESC, id DESC")).params(q=q)
+        rows = db.execute(base.offset(offset).limit(limit)).scalars().all()
+        # total via count over same where
+        total = db.execute(select(func.count()).select_from(select(KbCard).where(where_clause).subquery()).params(q=q)).scalar() or 0
+        # Tag filtering on top (cheap filter)
+        out = []
+        for r in rows:
+            if not tag_list or set(tag_list).issubset(set(r.tags or [])):
+                out.append({"id": r.id, "title": r.title, "tags": r.tags or []})
+        return {"page": page, "limit": limit, "total": int(total), "results": out}
+
+    # No query: filter by tags only with stable ordering
+    rows = db.execute(select(KbCard).order_by(KbCard.id.desc() if order != "asc" else KbCard.id.asc()).offset(offset).limit(limit)).scalars().all()
+    total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
+    results = []
+    for r in rows:
+        if not tag_list or set(tag_list).issubset(set(r.tags or [])):
+            results.append({"id": r.id, "title": r.title, "tags": r.tags or []})
     return {"page": page, "limit": limit, "total": int(total), "results": results}
 
 @router.get("/cards/{card_id}")
@@ -61,6 +72,17 @@ def list_tags(db: Session = Depends(get_db)):
         for t in (arr or []):
             tags.add(t)
     return {"tags": sorted(tags)}
+
+@router.get("/stats")
+def kb_stats(db: Session = Depends(get_db)):
+    rows = db.execute(select(KbCard.tags)).all()
+    tag_counts: dict[str, int] = {}
+    total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
+    for (arr,) in rows:
+        for t in (arr or []):
+            tag_counts[t] = tag_counts.get(t, 0) + 1
+    top_tags = sorted(({"tag": k, "count": int(v)} for k, v in tag_counts.items()), key=lambda x: x["count"], reverse=True)[:10]
+    return {"total": int(total), "top_tags": top_tags}
 
 @router.post("/cards")
 def upsert_card(card: dict, db: Session = Depends(get_db)):

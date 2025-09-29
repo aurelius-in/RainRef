@@ -2,6 +2,7 @@
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 from routers import ref_events, support, actions, signals, kb, audit, metrics
+from routers import adapters as adapters_router
 from routers import auth_routes
 import logging
 import time
@@ -36,7 +37,8 @@ async def request_id_and_log(request: Request, call_next):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "no-referrer"
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
     dur = (time.time() - start) * 1000
     logger.info(f"{rid} {request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
     return response
@@ -55,6 +57,7 @@ app.include_router(kb.router, prefix="/kb", tags=["kb"])
 app.include_router(audit.router, prefix="/audit", tags=["audit"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(metrics.router, prefix="/metrics", tags=["metrics"])
+app.include_router(adapters_router.router, prefix="/adapters", tags=["adapters"])
 
 @app.get("/healthz")
 def health():

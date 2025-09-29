@@ -27,7 +27,7 @@ api.interceptors.response.use(
     const rid = err?.response?.headers?.['x-request-id'];
     const disableToasts = String(import.meta.env.VITE_DISABLE_TOASTS||'').toLowerCase() === 'true';
     if (!disableToasts) {
-      if (status === 429) { showToast('Take a beat â€” we throttled duplicate clicks.'); }
+      if (status === 429) { showToast('Take a beat — we throttled duplicate clicks.'); }
       else if (rid) { showToast(`Request ${rid}: ${msg}`); }
       else { showToast(`Error ${status || ''} ${msg}`.trim()); }
     }

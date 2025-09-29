@@ -14,6 +14,7 @@ export default function Kb() {
   const [total, setTotal] = useState(0);
   const [stats, setStats] = useState<any>(null);
   const [order, setOrder] = useState<'asc' | 'desc'>('desc');
+  const [who, setWho] = useState<any>(null);
   const limit = 10;
   const refresh = async () => {
     setItems(null);
@@ -25,6 +26,7 @@ export default function Kb() {
     const qp = params.get('q'); if (qp) setQ(qp);
     refresh();
     api.get("/kb/stats").then(r => setStats(r.data)).catch(() => setStats({}));
+    api.get('/auth/whoami').then(r => setWho(r.data)).catch(()=>setWho(null));
   }, [page, order, params]);
 
   return (
@@ -44,8 +46,8 @@ export default function Kb() {
           <option value="desc">Newest</option>
           <option value="asc">Oldest</option>
         </select>
-        <Link to="/kb/new">New Card</Link>
-        <a href={`${API_BASE}/kb/cards/export`} target="_blank" rel="noreferrer">Export JSON</a>
+        {who?.role === 'admin' && <Link to="/kb/new">New Card</Link>}
+        {who?.role === 'admin' && <a href={`${API_BASE}/kb/cards/export`} target="_blank" rel="noreferrer">Export JSON</a>}
       </div>
       {items === null ? (
         <Spinner />
@@ -53,7 +55,10 @@ export default function Kb() {
         <>
           <ul>
             {items.map((c) => (
-              <li key={c.id}><Link to={`/kb/${c.id}`}>{c.title}</Link> Â· <Link to={`/kb/${c.id}/edit`}>Edit</Link></li>
+              <li key={c.id}>
+                <Link to={`/kb/${c.id}`}>{c.title}</Link>
+                {who?.role === 'admin' && <span> · <Link to={`/kb/${c.id}/edit`}>Edit</Link></span>}
+              </li>
             ))}
           </ul>
           <div style={{ display: 'flex', gap: 8 }}>

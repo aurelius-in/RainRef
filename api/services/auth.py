@@ -44,6 +44,21 @@ async def require_admin_jwt(authorization: Optional[str] = Header(None)) -> dict
     return claims
 
 
+async def require_support_jwt(authorization: Optional[str] = Header(None)) -> dict:
+    # Reuse the same toggle to keep behavior predictable in dev
+    if not settings.require_jwt_for_admin:
+        return {}
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=401, detail="missing bearer token")
+    token = authorization.split(" ", 1)[1]
+    claims = verify_jwt(token)
+    roles = claims.get("roles") or []
+    allowed = any(r in ("admin", "support_lead", "support") for r in roles)
+    if not allowed:
+        raise HTTPException(status_code=403, detail="support role required")
+    return claims
+
+
 def hash_password(plain: str) -> str:
     salt = bcrypt.gensalt()
     return bcrypt.hashpw(plain.encode("utf-8"), salt).decode("utf-8")

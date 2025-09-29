@@ -6,6 +6,7 @@ from sqlalchemy import select, func, text
 from services.flow import run_flow
 from services.graph_flow import run_flow_graph
 import os
+from services.auth import require_support_jwt
 from models.entities import Ticket, Action
 import uuid
 
@@ -19,7 +20,7 @@ def get_db():
 		db.close()
 
 @router.post("/answer", response_model=AnswerProposal)
-def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
+def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	ref_event = ref_event or RefEventIn(source="support", channel="inbox", text="help", user_ref=None)
 	tid = f"t-{uuid.uuid4().hex[:8]}"
 	t = Ticket(id=tid, ref_event_id=None, status="draft")
@@ -41,7 +42,7 @@ def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
 	return proposal
 
 @router.post("/tickets")
-def create_ticket(payload: dict, db: Session = Depends(get_db)):
+def create_ticket(payload: dict, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	tid = f"t-{uuid.uuid4().hex[:8]}"
 	t = Ticket(id=tid, ref_event_id=payload.get("ref_event_id"), status=payload.get("status", "open"))
 	db.add(t)
@@ -59,7 +60,8 @@ def list_tickets(
 	status: str = Query(""),
 	q: str = Query(""),
 	order: str = Query("desc"),
-	db: Session = Depends(get_db),
+    db: Session = Depends(get_db),
+    __: dict = Depends(require_support_jwt),
 ):
 	offset = (page - 1) * limit
 	stmt = select(Ticket)
@@ -76,19 +78,19 @@ def list_tickets(
 	return {"page": page, "limit": limit, "total": int(total), "items": items}
 
 @router.get("/tickets/{ticket_id}")
-def get_ticket(ticket_id: str, db: Session = Depends(get_db)):
+def get_ticket(ticket_id: str, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	t = db.get(Ticket, ticket_id)
 	if not t:
 		raise HTTPException(status_code=404, detail="not_found")
 	return {"id": t.id, "status": t.status, "ref_event_id": t.ref_event_id}
 
 @router.get("/tickets/{ticket_id}/actions")
-def list_ticket_actions(ticket_id: str, db: Session = Depends(get_db)):
+def list_ticket_actions(ticket_id: str, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	rows = db.execute(select(Action).where(Action.ticket_id == ticket_id).order_by(Action.id.desc())).scalars().all()
 	return {"items": [{"id": a.id, "type": a.type, "params": a.params} for a in rows]}
 
 @router.put("/tickets/{ticket_id}")
-def update_ticket(ticket_id: str, payload: dict, db: Session = Depends(get_db)):
+def update_ticket(ticket_id: str, payload: dict, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	t = db.get(Ticket, ticket_id)
 	if not t:
 		raise HTTPException(status_code=404, detail="not_found")
@@ -101,7 +103,7 @@ def update_ticket(ticket_id: str, payload: dict, db: Session = Depends(get_db)):
 	return {"id": t.id, "status": t.status}
 
 @router.post("/tickets/{ticket_id}/close")
-def close_ticket(ticket_id: str, db: Session = Depends(get_db)):
+def close_ticket(ticket_id: str, db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
 	t = db.get(Ticket, ticket_id)
 	if not t:
 		raise HTTPException(status_code=404, detail="not_found")
@@ -121,3 +123,15 @@ def export_tickets(db: Session = Depends(get_db)):
 	for t in rows:
 		lines.append(f"{t.id},{t.status},{t.ref_event_id or ''}\n")
 	return Response(content="".join(lines), media_type="text/csv")
+
+
+@router.get("/tickets/counts")
+def ticket_counts(db: Session = Depends(get_db), __: dict = Depends(require_support_jwt)):
+	# Return counts by status to support UI badges
+	rows = db.execute(select(Ticket.status, func.count()).group_by(Ticket.status)).all()
+	out = {str(k): int(v) for (k, v) in rows}
+	return {
+		"open": out.get("open", 0),
+		"draft": out.get("draft", 0),
+		"closed": out.get("closed", 0),
+	}

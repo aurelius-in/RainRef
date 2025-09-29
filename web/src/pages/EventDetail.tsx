@@ -6,12 +6,14 @@ export default function EventDetail() {
   const { id } = useParams();
   const [event, setEvent] = useState<any>(null);
   const [answer, setAnswer] = useState<any>(null);
+  const [who, setWho] = useState<any>(null);
   const [okMsg, setOkMsg] = useState<string | null>(null);
   const [tab, setTab] = useState<'answer'|'evidence'|'history'>('answer');
   const [evidence, setEvidence] = useState<any[] | null>(null);
   const [history, setHistory] = useState<any[] | null>(null);
   useEffect(() => {
     api.get(`/ref/events/${id}`).then(r => setEvent(r.data));
+    api.get('/auth/whoami').then(r => setWho(r.data)).catch(()=>setWho(null));
   }, [id]);
   const draft = async () => {
     const r = await api.post("/support/answer", { source: "inbox", channel: "support", text: event?.text || "", user_ref: event?.user_ref });
@@ -19,11 +21,17 @@ export default function EventDetail() {
   };
   const execute = async () => {
     if (!answer?.actions_suggested?.length) return;
-    const r = await api.post("/action/execute", answer.actions_suggested[0]);
-    const rid = r?.data?.beacon_receipt_id || 'receipt';
-    try { await navigator.clipboard.writeText(rid); } catch {}
-    setOkMsg(`Receipt • ${rid} (copied)`);
-    setTimeout(() => setOkMsg(null), 3000);
+    try {
+      const r = await api.post("/action/execute", answer.actions_suggested[0]);
+      const rid = r?.data?.beacon_receipt_id || 'receipt';
+      try { await navigator.clipboard.writeText(rid); } catch {}
+      setOkMsg(`Receipt • ${rid} (copied)`);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || 'action blocked';
+      setOkMsg(`Blocked: ${detail}`);
+    } finally {
+      setTimeout(() => setOkMsg(null), 3000);
+    }
   };
   const closeTicket = async () => {
     if (!answer?.ticket_id) return;
@@ -63,10 +71,13 @@ export default function EventDetail() {
         <header style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <h2 style={{ margin:0 }}>Answer</h2>
           <div style={{ display:'flex', gap:8 }}>
-            <button onClick={draft}>Propose Answer</button>
-            {answer?.ticket_id && <button onClick={closeTicket}>Close</button>}
+            <button onClick={draft} disabled={!['admin','support_lead','support'].includes(who?.role)}>Propose Answer</button>
+            {answer?.ticket_id && <button onClick={closeTicket} disabled={!['admin','support_lead','support'].includes(who?.role)}>Close</button>}
           </div>
         </header>
+        {!['admin','support_lead','support'].includes(who?.role || '') && (
+          <div className="ref-plate" role="status" style={{ margin:'8px 0' }}>Login with a support role to propose answers and execute actions.</div>
+        )}
         {okMsg && <div className="ref-plate" role="status">{okMsg}</div>}
         <article style={{ border:'1px solid var(--hair)', background:'var(--panel)', padding:16, minHeight:240 }}>
           <div style={{ display:'flex', gap:12, borderBottom:'1px solid var(--hair)', marginBottom:12 }} role="tablist"
@@ -141,7 +152,7 @@ export default function EventDetail() {
                     <span style={{ border:'1px solid var(--hair)', padding:'2px 6px' }}>Policy: Pass</span>
                   </div>
                   <pre style={{ background:'transparent' }}>{JSON.stringify(a.params||{}, null, 2)}</pre>
-                  <button onClick={execute}>Execute</button>
+                  <button onClick={execute} disabled={!['admin','support_lead','support'].includes(who?.role)}>Execute</button>
                 </div>
               ))}
             </div>
