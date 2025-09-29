@@ -33,3 +33,16 @@ def list_signals(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100
     stmt = select(Sig).order_by(Sig.id.asc() if order == "asc" else Sig.id.desc())
     rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
     return {"page": page, "limit": limit, "total": int(total), "items": [{"id": r.id, "type": r.type, "origin": r.origin} for r in rows]}
+
+@router.delete("/{signal_id}")
+def delete_signal(signal_id: str, db: Session = Depends(get_db)):
+    row = db.get(Sig, signal_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="not_found")
+    try:
+        db.delete(row)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to delete")
+    return {"id": signal_id, "deleted": True}

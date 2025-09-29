@@ -67,3 +67,12 @@ def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), or
         receipt_id = r.id[2:] if r.id.startswith("a-") else r.id
         items.append({"id": r.id, "receipt_id": receipt_id, "type": r.type, "ticket_id": r.ticket_id})
     return {"page": page, "limit": limit, "total": int(total), "items": items}
+
+@router.get("/history/by-type")
+def history_by_type(type: str, page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+    offset = (page - 1) * limit
+    base = select(Action).where(Action.type == type)
+    total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
+    rows = db.execute(base.order_by(Action.id.desc()).offset(offset).limit(limit)).scalars().all()
+    items = [{"id": r.id, "type": r.type, "ticket_id": r.ticket_id} for r in rows]
+    return {"page": page, "limit": limit, "total": int(total), "items": items}

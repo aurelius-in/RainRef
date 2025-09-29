@@ -117,3 +117,19 @@ async def download(url: str = Query(...)):
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(url)
         return Response(content=r.content, media_type=r.headers.get("content-type", "application/octet-stream"))
+
+@router.post("/cards/delete")
+def bulk_delete(payload: dict, db: Session = Depends(get_db)):
+    ids = payload.get("ids") or []
+    deleted = 0
+    for cid in ids:
+        obj = db.get(KbCard, cid)
+        if obj:
+            db.delete(obj)
+            deleted += 1
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to bulk delete")
+    return {"deleted": deleted}

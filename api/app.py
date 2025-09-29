@@ -68,3 +68,8 @@ def info():
 @app.head("/healthz")
 def head_health():
     return {}
+
+@app.get("/system/time")
+def system_time():
+    import datetime
+    return {"server_time": datetime.datetime.utcnow().isoformat() + "Z"}
