@@ -172,11 +172,11 @@ RainRef uses **small, purpose-built agents**, each boxed by policies (OPA/RainBe
    *Output:* `ProductSignal` with evidence refs (ticket id, KB card ids, receipt id).
 
 8. **Evaluator (Quality & Drift)**
-   *Job:* score answers for citation quality; flag KB drift; catch policy nearâ€‘misses.
+   *Job:* score answers for citation quality; flag KB drift; catch policy near-misses.
    *Tools:* rule checks + small LLM rubric.
    *Output:* metrics; review queue items.
 
-9. **KB Curator (optional)**
+9. **KB Curator**
    *Job:* suggest **canonical paragraphs** and tag fixes when patterns repeat.
    *Tools:* summarizer constrained to quoted sources.
   *Output:* draft KB card -> human review -> approved.
@@ -199,13 +199,11 @@ graph TB
 
 ```
 
-**No-agent mode:** disable generative steps; use exact-match KB, canned replies, and deterministic playbooks—still with receipts and signals.
-
 ---
 
 ## Architecture
 
-**Design goals:** simple to deploy, safe by default, strong audit trail, backendâ€‘first.
+**Design goals:** simple to deploy, safe by default, strong audit trail, backend-first.
 
 * Frontend: React + TypeScript
 * API: FastAPI
@@ -279,22 +277,22 @@ graph TB
 
 **Answer and Action**
 
-* `POST /support/answer` â€” Returns answer markdown, citations, suggested actions.
-* `POST /action/execute` â€” Runs an action through policy checks and writes a receipt.
+* `POST /support/answer` - Returns answer markdown, citations, suggested actions.
+* `POST /action/execute` - Runs an action through policy checks and writes a receipt.
 
 **Signals**
 
-* `POST /signals/emit` â€” Emit a Product Signal for roadmap tools or RainScout.
-* `GET /signals/search` â€” Filter by type, product area, and strength.
+* `POST /signals/emit` - Emit a Product Signal for roadmap tools or RainScout.
+* `GET /signals/search` - Filter by type, product area, and strength.
 
 **KB**
 
-* `GET /kb/cards?query=&tags=` â€” Hybrid search across approved cards.
-* `POST /kb/cards` â€” Create and update canonical text with sources.
+* `GET /kb/cards?query=&tags=` - Hybrid search across approved cards.
+* `POST /kb/cards` - Create and update canonical text with sources.
 
 **Audit**
 
-* `GET /audit/:id` â€” Fetch a receipt by id.
+* `GET /audit/:id` - Fetch a receipt by id.
 
 **Events**
 
