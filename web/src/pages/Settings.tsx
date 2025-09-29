@@ -10,6 +10,9 @@ export default function Settings() {
   const [tags, setTags] = useState<string[]>([]);
   const [loginState, setLoginState] = useState({ username: 'admin', password: 'admin' });
   const [who, setWho] = useState<any>(null);
+  const [adapterName, setAdapterName] = useState('zendesk');
+  const [adapterPayload, setAdapterPayload] = useState<string>(`{\n  "subject": "Test from RainRef",\n  "body": "Hello",\n  "priority": "normal"\n}`);
+  const [adapterResult, setAdapterResult] = useState<string>('');
   useEffect(() => {
     api.get("/healthz/details").then(r => setDetails(r.data)).catch(() => setDetails({ ok: false }));
     api.get("/info").then(r => setInfo(r.data)).catch(() => setInfo({ version: "?", git_sha: "?", env: "dev" }));
@@ -61,6 +64,40 @@ export default function Settings() {
           <div>Intercom configured: {String(cfg?.adapters?.intercom)}</div>
           <div>GitHub configured: {String(cfg?.adapters?.github)}</div>
           <div style={{ color:'var(--muted)' }}>Set ZENDESK_BASE_URL/TOKEN, INTERCOM_BASE_URL/TOKEN, GITHUB_REPO/TOKEN.</div>
+        </div>
+        <div className="ref-plate" style={{ marginBottom: 12 }}>
+          <h4 style={{ marginTop:0 }}>Adapter Test (admin)</h4>
+          <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:8 }}>
+            <label>
+              <span className="sr-only">Adapter name</span>
+              <select aria-label="Adapter name" value={adapterName} onChange={e=>setAdapterName(e.target.value)}>
+                <option value="zendesk">zendesk</option>
+                <option value="intercom">intercom</option>
+                <option value="github">github</option>
+              </select>
+            </label>
+            <button onClick={async()=>{
+              try {
+                const payload = JSON.parse(adapterPayload || '{}');
+                const r = await api.post('/adapters/test', { name: adapterName, payload });
+                setAdapterResult(JSON.stringify(r.data, null, 2));
+              } catch (e:any) {
+                const msg = e?.response?.data?.detail || e?.message || 'failed';
+                setAdapterResult(String(msg));
+              }
+            }}>Test</button>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+            <label>
+              <div style={{ marginBottom:6 }}>Payload (JSON)</div>
+              <textarea value={adapterPayload} onChange={e=>setAdapterPayload(e.target.value)} aria-label="Adapter payload"
+                        style={{ width:'100%', minHeight:140, fontFamily:'monospace', background:'var(--panel)', color:'var(--fg)', border:'1px solid var(--hair)', borderRadius:6, padding:8 }}/>
+            </label>
+            <label>
+              <div style={{ marginBottom:6 }}>Result</div>
+              <pre className="code-block" style={{ minHeight:140 }}>{adapterResult || '—'}</pre>
+            </label>
+          </div>
         </div>
         <h3>Health</h3>
         <pre>{JSON.stringify(details, null, 2)}</pre>

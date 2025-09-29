@@ -3,7 +3,7 @@
 ## Dev setup
 - `docker compose -f infra/docker-compose.yml up --build`
 - API at http://localhost:8080, Web at http://localhost:5173
-- `make test` (API) Â· `make web` (dev) Â· `make migrate-seed`
+- `make test` (API) · `make web` (dev) · `make migrate-seed`
 
 ## Coding standards
 - Python: type hints, ruff + black

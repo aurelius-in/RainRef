@@ -10,6 +10,7 @@ export default function Tickets() {
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState("");
   const [counts, setCounts] = useState<any>({});
+  const [who, setWho] = useState<any>(null);
   const limit = 10;
   const refresh = async () => {
     setItems(null);
@@ -19,7 +20,8 @@ export default function Tickets() {
     const c = await api.get("/support/tickets/counts");
     setCounts(c.data || {});
   };
-  useEffect(() => { refresh(); }, [page, status]);
+  useEffect(() => { api.get('/auth/whoami').then(r=>setWho(r.data)).catch(()=>setWho(null)); }, []);
+  useEffect(() => { if (['admin','support_lead','support'].includes(who?.role)) { refresh(); } else { setItems([]); setCounts({}); } }, [page, status, who]);
 
   const close = async (id: string) => {
     await api.post(`/support/tickets/${id}/close`);
@@ -29,7 +31,10 @@ export default function Tickets() {
   return (
     <div>
       <h2>Tickets</h2>
-      <a href={`${API_BASE}/support/tickets/export`} target="_blank" rel="noreferrer">Export CSV</a>
+      {who?.role === 'admin' && <a href={`${API_BASE}/support/tickets/export`} target="_blank" rel="noreferrer">Export CSV</a>}
+      {!['admin','support_lead','support'].includes(who?.role || '') && (
+        <div className="ref-plate" role="status" style={{ margin:'8px 0' }}>Login with a support role to view tickets.</div>
+      )}
       <div style={{ display: 'flex', gap: 12 }}>
         <div>Open: {counts.open || 0}</div>
         <div>Draft: {counts.draft || 0}</div>
@@ -41,7 +46,7 @@ export default function Tickets() {
         <option value="draft">Draft</option>
         <option value="closed">Closed</option>
       </select>
-      {items === null ? <Spinner /> : (
+      {['admin','support_lead','support'].includes(who?.role || '') ? (items === null ? <Spinner /> : (
         <>
           <ul>
             {items.map(t => (
@@ -56,7 +61,7 @@ export default function Tickets() {
             <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil(total / limit)}>Next</button>
           </div>
         </>
-      )}
+      )) : null}
     </div>
   );
 }
