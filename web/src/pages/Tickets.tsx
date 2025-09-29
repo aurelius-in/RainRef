@@ -46,7 +46,7 @@ export default function Tickets() {
           <ul>
             {items.map(t => (
               <li key={t.id}>
-                {t.id} â€” {t.status} {t.status !== 'closed' && (<button onClick={() => close(t.id)}>Close</button>)}
+                {t.id} — {t.status} {t.status !== 'closed' && (<button onClick={() => close(t.id)}>Close</button>)}
               </li>
             ))}
           </ul>

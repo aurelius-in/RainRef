@@ -21,11 +21,17 @@ export default function EventDetail() {
   };
   const execute = async () => {
     if (!answer?.actions_suggested?.length) return;
-    const r = await api.post("/action/execute", answer.actions_suggested[0]);
-    const rid = r?.data?.beacon_receipt_id || 'receipt';
-    try { await navigator.clipboard.writeText(rid); } catch {}
-    setOkMsg(`Receipt • ${rid} (copied)`);
-    setTimeout(() => setOkMsg(null), 3000);
+    try {
+      const r = await api.post("/action/execute", answer.actions_suggested[0]);
+      const rid = r?.data?.beacon_receipt_id || 'receipt';
+      try { await navigator.clipboard.writeText(rid); } catch {}
+      setOkMsg(`Receipt • ${rid} (copied)`);
+    } catch (err: any) {
+      const detail = err?.response?.data?.detail || 'action blocked';
+      setOkMsg(`Blocked: ${detail}`);
+    } finally {
+      setTimeout(() => setOkMsg(null), 3000);
+    }
   };
   const closeTicket = async () => {
     if (!answer?.ticket_id) return;
