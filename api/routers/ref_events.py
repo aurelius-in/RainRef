@@ -1,4 +1,5 @@
 ﻿from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from typing import List
 from models.schemas import RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -34,8 +35,38 @@ def ingest_event(evt: RefEventIn, db: Session = Depends(get_db)):
         db.rollback()
     return {"status": "ok", "id": rid, "normalized": True}
 
+@router.post("/events/bulk")
+def ingest_bulk(evts: List[RefEventIn], db: Session = Depends(get_db)):
+    ids: List[str] = []
+    for evt in evts:
+        rid = f"e-{uuid.uuid4().hex[:8]}"
+        ids.append(rid)
+        db.add(RefEvent(
+            id=rid,
+            source=evt.source,
+            channel=evt.channel,
+            product=evt.product,
+            user_ref=evt.user_ref,
+            text=evt.text,
+            context=evt.context or {},
+        ))
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to insert batch")
+    return {"inserted": len(ids), "ids": ids}
+
 @router.get("/events")
-def list_events(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), q: str = Query(""), source: str = Query(""), channel: str = Query(""), db: Session = Depends(get_db)):
+def list_events(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    order: str = Query("desc"),
+    q: str = Query(""),
+    source: str = Query(""),
+    channel: str = Query(""),
+    db: Session = Depends(get_db),
+):
     offset = (page - 1) * limit
     stmt = select(RefEvent)
     if source:
@@ -70,7 +101,7 @@ def delete_event(event_id: str, db: Session = Depends(get_db)):
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
-    return {"id": event_id, "deleted": True}
+    return Response(status_code=204)
 
 @router.get("/events/export")
 def export_events(db: Session = Depends(get_db)):
@@ -83,3 +114,8 @@ def export_events(db: Session = Depends(get_db)):
         lines.append(f"{r.id},{r.source},{r.channel},{user_ref},{text}\n")
     csv_data = "".join(lines)
     return Response(content=csv_data, media_type="text/csv")
+
+@router.get("/events/stats")
+def stats(db: Session = Depends(get_db)):
+    rows = db.execute(select(RefEvent.channel, func.count()).group_by(RefEvent.channel)).all()
+    return {"by_channel": {k: int(v) for k, v in rows}}

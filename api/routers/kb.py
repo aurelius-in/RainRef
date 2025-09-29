@@ -5,8 +5,10 @@ from models.db import SessionLocal
 from models.entities import KbCard
 from services.blob import upload_bytes
 from services.kb_embed import embed_text
+from models.schemas import KbCardIn
 import uuid
 import httpx
+import json
 
 router = APIRouter()
 
@@ -21,8 +23,7 @@ def get_db():
 def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
     offset = (page - 1) * limit
     total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
-    stmt = select(KbCard)
-    stmt = stmt.order_by(KbCard.id.asc() if order == "asc" else KbCard.id.desc())
+    stmt = select(KbCard).order_by(KbCard.id.asc() if order == "asc" else KbCard.id.desc())
     rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
     q = (query or "").lower()
     tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
@@ -40,6 +41,21 @@ def get_card(card_id: str, db: Session = Depends(get_db)):
     if not obj:
         raise HTTPException(status_code=404, detail="not_found")
     return {"id": obj.id, "title": obj.title, "body": obj.body, "tags": obj.tags or []}
+
+@router.get("/cards/export")
+def export_cards(db: Session = Depends(get_db)):
+    rows = db.execute(select(KbCard)).scalars().all()
+    data = [{"id": r.id, "title": r.title, "body": r.body, "tags": r.tags or []} for r in rows]
+    return Response(content=json.dumps(data), media_type="application/json")
+
+@router.get("/tags")
+def list_tags(db: Session = Depends(get_db)):
+    rows = db.execute(select(KbCard.tags)).all()
+    tags = set()
+    for (arr,) in rows:
+        for t in (arr or []):
+            tags.add(t)
+    return {"tags": sorted(tags)}
 
 @router.post("/cards")
 def upsert_card(card: dict, db: Session = Depends(get_db)):
@@ -66,14 +82,17 @@ def upsert_card(card: dict, db: Session = Depends(get_db)):
         db.rollback()
     return {"id": cid, "status": "ok"}
 
-@router.put("/cards/{card_id}")
-def update_card(card_id: str, card: dict, db: Session = Depends(get_db)):
+@router.patch("/cards/{card_id}")
+def patch_card(card_id: str, patch: KbCardIn, db: Session = Depends(get_db)):
     obj = db.get(KbCard, card_id)
     if not obj:
         raise HTTPException(status_code=404, detail="not_found")
-    obj.title = card.get("title") or obj.title
-    obj.body = card.get("body") or obj.body
-    obj.tags = card.get("tags") or obj.tags
+    if patch.title is not None:
+        obj.title = patch.title
+    if patch.body is not None:
+        obj.body = patch.body
+    if patch.tags is not None:
+        obj.tags = patch.tags
     obj.embedding = embed_text(obj.body or "")
     try:
         db.commit()
@@ -91,7 +110,8 @@ def delete_card(card_id: str, db: Session = Depends(get_db)):
         db.commit()
     except Exception:
         db.rollback()
-    return {"id": card_id, "deleted": True}
+        raise HTTPException(status_code=500, detail="failed to delete")
+    return Response(status_code=204)
 
 @router.post("/upload")
 async def upload(file: UploadFile = File(...), db: Session = Depends(get_db)):
@@ -117,6 +137,21 @@ async def download(url: str = Query(...)):
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(url)
         return Response(content=r.content, media_type=r.headers.get("content-type", "application/octet-stream"))
+
+@router.post("/cards/{card_id}/copy")
+def copy_card(card_id: str, db: Session = Depends(get_db)):
+    obj = db.get(KbCard, card_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="not_found")
+    new_id = f"kb-{uuid.uuid4().hex[:6]}"
+    dup = KbCard(id=new_id, title=obj.title + " (copy)", body=obj.body, tags=obj.tags or [], embedding=obj.embedding)
+    db.add(dup)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="failed to copy")
+    return {"id": new_id}
 
 @router.post("/cards/delete")
 def bulk_delete(payload: dict, db: Session = Depends(get_db)):
