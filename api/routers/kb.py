@@ -121,7 +121,7 @@ def put_card(card_id: str, payload: dict, db: Session = Depends(get_db)):
     return {"id": card_id, "status": "ok"}
 
 @router.delete("/cards/{card_id}")
-def delete_card(card_id: str, db: Session = Depends(get_db)):
+def delete_card(card_id: str, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     obj = db.get(KbCard, card_id)
     if not obj:
         raise HTTPException(status_code=404, detail="not_found")
@@ -174,7 +174,7 @@ def copy_card(card_id: str, db: Session = Depends(get_db)):
     return {"id": new_id}
 
 @router.post("/cards/delete")
-def bulk_delete(payload: dict, db: Session = Depends(get_db)):
+def bulk_delete(payload: dict, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     ids = payload.get("ids") or []
     deleted = 0
     for cid in ids:

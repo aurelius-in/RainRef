@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "../lib/api";
 
 export default function Playbooks() {
   const [items, setItems] = useState<any[] | null>(null);
   const [selected, setSelected] = useState<any | null>(null);
+  const [message, setMessage] = useState<string>("");
+  const liveRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Placeholder: list playbooks when API available
     setItems([
@@ -26,6 +28,11 @@ export default function Playbooks() {
         </div>
       </aside>
       <main>
+        <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:12 }}>
+          <button onClick={()=>{ if(selected){ navigator.clipboard.writeText(selected.yaml).then(()=>setMessage('Copied YAML'),()=>setMessage('Copy failed')); } }}>Copy</button>
+          <button onClick={()=>{ if(selected){ const b = new Blob([selected.yaml], { type:'text/yaml' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href=u; a.download=`${selected.id}.yaml`; a.click(); URL.revokeObjectURL(u); setMessage('Downloaded YAML'); } }}>Download</button>
+          <div ref={liveRef} aria-live="polite" style={{ minHeight:20, color:'var(--muted)' }}>{message}</div>
+        </div>
         <div className="ref-plate">
           <h3 style={{ marginTop:0 }}>YAML Preview</h3>
           <pre className="code-block">{selected?.yaml || 'Select a playbook to preview.'}</pre>
