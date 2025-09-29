@@ -69,7 +69,7 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db), authoriz
     return resp
 
 @router.get("/history")
-def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
+def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     offset = (page - 1) * limit
     total = db.execute(select(func.count()).select_from(Action)).scalar() or 0
     stmt = select(Action).order_by(Action.id.asc() if order == "asc" else Action.id.desc())
@@ -81,7 +81,7 @@ def history(page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), or
     return {"page": page, "limit": limit, "total": int(total), "items": items}
 
 @router.get("/history/by-type")
-def history_by_type(type: str, page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db)):
+def history_by_type(type: str, page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     offset = (page - 1) * limit
     base = select(Action).where(Action.type == type)
     total = db.execute(select(func.count()).select_from(base.subquery())).scalar() or 0
