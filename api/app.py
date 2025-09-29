@@ -8,6 +8,7 @@ import time
 import uuid
 from services.health import check_all
 from config import settings
+import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 
@@ -77,6 +78,21 @@ def system_time():
     import datetime
     return {"server_time": datetime.datetime.utcnow().isoformat() + "Z"}
 
-@app.get("/config/auth")
-def config_auth():
-    return {"api_key_required": bool(getattr(settings, "api_key", None))}
+@app.get("/config")
+def get_config():
+    return {
+        "allowed_origins": settings.allowed_origins,
+        "log_level": settings.log_level,
+        "opa_url": getattr(settings, "opa_url", None),
+        "openai_api_key_configured": bool(getattr(settings, "openai_api_key", None)),
+        "api_key_required": bool(getattr(settings, "api_key", None)),
+        "jwt_enabled": bool(getattr(settings, "jwt_secret", None)),
+        "require_jwt_for_admin": getattr(settings, "require_jwt_for_admin", False),
+        "app_version": settings.app_version,
+        "git_sha": settings.git_sha,
+        "adapters": {
+            "zendesk": bool(os.getenv("ZENDESK_BASE_URL")) and bool(os.getenv("ZENDESK_TOKEN")),
+            "intercom": bool(os.getenv("INTERCOM_BASE_URL")) and bool(os.getenv("INTERCOM_TOKEN")),
+            "github": bool(os.getenv("GITHUB_REPO")) and bool(os.getenv("GITHUB_TOKEN")),
+        },
+    }

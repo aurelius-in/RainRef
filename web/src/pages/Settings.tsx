@@ -57,10 +57,10 @@ export default function Settings() {
         <div><strong>Who am I</strong>: <code>{JSON.stringify(who)}</code></div>
         <h3>Integrations</h3>
         <div className="ref-plate" style={{ marginBottom: 12 }}>
-          <div>Zendesk: uses ZENDESK_BASE_URL and ZENDESK_TOKEN</div>
-          <div>Intercom: uses INTERCOM_BASE_URL and INTERCOM_TOKEN</div>
-          <div>GitHub: uses GITHUB_REPO and GITHUB_TOKEN</div>
-          <div style={{ color:'var(--muted)' }}>Configure via Docker Compose env or server env vars.</div>
+          <div>Zendesk configured: {String(cfg?.adapters?.zendesk)}</div>
+          <div>Intercom configured: {String(cfg?.adapters?.intercom)}</div>
+          <div>GitHub configured: {String(cfg?.adapters?.github)}</div>
+          <div style={{ color:'var(--muted)' }}>Set ZENDESK_BASE_URL/TOKEN, INTERCOM_BASE_URL/TOKEN, GITHUB_REPO/TOKEN.</div>
         </div>
         <h3>Health</h3>
         <pre>{JSON.stringify(details, null, 2)}</pre>
