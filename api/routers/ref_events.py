@@ -4,7 +4,7 @@ from typing import List
 from models.schemas import RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from models.entities import RefEvent
 import uuid
 
@@ -74,7 +74,8 @@ def list_events(
         stmt = stmt.where(RefEvent.source == source)
     if channel:
         stmt = stmt.where(RefEvent.channel == channel)
-    stmt = stmt.order_by(RefEvent.id.asc() if order == "asc" else RefEvent.id.desc())
+    # Order by creation time for deterministic paging across tests
+    stmt = stmt.order_by(text("created_at asc") if order == "asc" else text("created_at desc"))
     total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
     rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
     ql = (q or "").lower()
