@@ -5,12 +5,13 @@ import Inbox from "./pages/Inbox";
 import EventDetail from "./pages/EventDetail";
 import Kb from "./pages/Kb";
 import KbDetail from "./pages/KbDetail";
+import KbEdit from "./pages/KbEdit";
 import Health from "./pages/Health";
 import Signals from "./pages/Signals";
 import Audit from "./pages/Audit";
 import Actions from "./pages/Actions";
-import Settings from "./pages/Settings";
 import Tickets from "./pages/Tickets";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -33,7 +34,9 @@ export default function App() {
             <Route path="/" element={<Inbox />} />
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/kb" element={<Kb />} />
+            <Route path="/kb/new" element={<KbEdit />} />
             <Route path="/kb/:id" element={<KbDetail />} />
+            <Route path="/kb/:id/edit" element={<KbEdit />} />
             <Route path="/tickets" element={<Tickets />} />
             <Route path="/actions" element={<Actions />} />
             <Route path="/signals" element={<Signals />} />
