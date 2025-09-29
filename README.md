@@ -427,6 +427,9 @@ Quick start:
    docker compose -f infra/docker-compose.yml up --build
    ```
 3. Visit API http://localhost:8080/healthz and Web http://localhost:5173
+4. Smoke test (after compose up):
+   - Windows PowerShell: `./scripts/smoke.ps1 http://localhost:8088 admin@rainref.local admin`
+   - macOS/Linux: `bash ./scripts/smoke.sh http://localhost:8088 admin@rainref.local admin`
 
 Makefile helpers:
 - `make up` / `make down`

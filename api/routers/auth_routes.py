@@ -26,9 +26,11 @@ def login(body: LoginIn, db: Session = Depends(get_db)):
 @router.get("/whoami")
 def whoami(authorization: str | None = Header(None)):
     if not authorization or not authorization.lower().startswith("bearer "):
-        return {"user": "anonymous"}
+        return {"sub": "anonymous", "roles": [], "role": "guest"}
     token = authorization.split(" ", 1)[1]
     claims = verify_jwt(token)
-    return {"user": claims.get("sub"), "roles": claims.get("roles", [])}
+    roles = claims.get("roles", []) or []
+    primary = roles[0] if roles else "user"
+    return {"sub": claims.get("sub"), "roles": roles, "role": primary}
 
 
