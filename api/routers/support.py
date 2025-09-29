@@ -56,10 +56,10 @@ def list_tickets(
 	db: Session = Depends(get_db),
 ):
 	offset = (page - 1) * limit
-    stmt = select(Ticket)
+	stmt = select(Ticket)
 	if status:
 		stmt = stmt.where(Ticket.status == status)
-    stmt = stmt.order_by(text("created_at asc") if order == "asc" else text("created_at desc"))
+	stmt = stmt.order_by(text("created_at asc") if order == "asc" else text("created_at desc"))
 	total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
 	rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
 	ql = (q or "").lower()
