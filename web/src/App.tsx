@@ -12,6 +12,8 @@ import Audit from "./pages/Audit";
 import Actions from "./pages/Actions";
 import Tickets from "./pages/Tickets";
 import Settings from "./pages/Settings";
+import Metrics from "./pages/Metrics";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 export default function App() {
@@ -28,7 +30,9 @@ export default function App() {
             <Link to="/signals">Signals</Link>
             <Link to="/audit">Audit</Link>
             <Link to="/health">Health</Link>
+            <Link to="/metrics">Metrics</Link>
             <Link to="/settings">Settings</Link>
+            <Link to="/about">About</Link>
           </nav>
           <Routes>
             <Route path="/" element={<Inbox />} />
@@ -42,7 +46,9 @@ export default function App() {
             <Route path="/signals" element={<Signals />} />
             <Route path="/audit" element={<Audit />} />
             <Route path="/health" element={<Health />} />
+            <Route path="/metrics" element={<Metrics />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

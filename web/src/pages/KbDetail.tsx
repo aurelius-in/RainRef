@@ -11,8 +11,9 @@ export default function KbDetail() {
   }, [id]);
   return (
     <div>
-      <h2>KB Card</h2>
+      <h2>KB Card</h2>\n      <button onClick={async () => { await api.delete(/kb/cards/); alert('Card deleted'); }}>Delete Card</button>
       <pre>{JSON.stringify(card, null, 2)}</pre>
     </div>
   );
 }
+

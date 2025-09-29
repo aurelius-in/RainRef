@@ -466,3 +466,14 @@ Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from 
 - Sorting controls on Inbox, Knowledge, and Signals
 - Export links for Events (CSV) and Tickets (CSV)
 - Bulk ingest support for Events via POST /ref/events/bulk
+
+### Management endpoints
+- Actions by type: GET /action/history/by-type?type=...
+- Ticket actions: GET /support/tickets/{id}/actions
+- Delete signal: DELETE /signals/{id}
+- Bulk delete cards: POST /kb/cards/delete
+- System time: GET /system/time
+
+### Auth & Retrieval
+- Admin endpoints require `X-API-Key` when `API_KEY` is set in `.env`.
+- Retrieval uses simple token match over embedded KB and enforces at least one citation in answers.

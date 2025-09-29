@@ -22,3 +22,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: make ci
+\n  all:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: make test-all\n

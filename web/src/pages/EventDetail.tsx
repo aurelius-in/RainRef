@@ -28,7 +28,7 @@ export default function EventDetail() {
   };
   return (
     <div>
-      <h2>Event</h2>
+      <h2>Event</h2>\n      <button onClick={async () => { await api.delete(/ref/events/); alert('Event deleted'); }}>Delete Event</button>
       {okMsg && <div style={{ background: '#ecfdf5', color: '#065f46', padding: 8, borderRadius: 4 }}>{okMsg}</div>}
       <pre>{JSON.stringify(event, null, 2)}</pre>
       <button onClick={draft}>Draft Answer</button>
@@ -55,3 +55,4 @@ export default function EventDetail() {
     </div>
   );
 }
+
