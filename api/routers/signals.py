@@ -54,5 +54,5 @@ def delete_signal(signal_id: str, db: Session = Depends(get_db)):
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
-    return Response(status_code=204)
+    return {"ok": True}
 

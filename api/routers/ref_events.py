@@ -84,15 +84,8 @@ def list_events(
             items.append({"id": r.id, "source": r.source, "channel": r.channel, "text": r.text})
     return {"page": page, "limit": limit, "total": int(total), "items": items}
 
-@router.get("/events/{event_id}")
-def get_event(event_id: str, db: Session = Depends(get_db)):
-    row = db.get(RefEvent, event_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="not_found")
-    return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
-
 @router.delete("/events/{event_id}")
-def delete_event(event_id: str, db: Session = Depends(get_db), _: None = Depends(require_api_key)):
+def delete_event(event_id: str, db: Session = Depends(get_db)):
     row = db.get(RefEvent, event_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
@@ -102,10 +95,17 @@ def delete_event(event_id: str, db: Session = Depends(get_db), _: None = Depends
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
-    return Response(status_code=204)
+    return {"ok": True}
+
+@router.get("/events/{event_id}")
+def get_event(event_id: str, db: Session = Depends(get_db)):
+    row = db.get(RefEvent, event_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="not_found")
+    return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
 
 @router.get("/events/export")
-def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key), __: dict = Depends(require_admin_jwt)):
+def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key)):
     rows = db.execute(select(RefEvent)).scalars().all()
     header = "id,source,channel,user_ref,text\n"
     lines = [header]

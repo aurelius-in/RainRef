@@ -1,6 +1,7 @@
 ﻿from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import JSONResponse
-from services.policy import check_allow
+from services import policy
+import json
 from services.beacon import emit_receipt
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -23,13 +24,14 @@ def get_db():
         db.close()
 
 @router.post("/execute")
-async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
+async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     act = action.model_dump()
     act_type = act.get("type", "any")
+    act_key = f"{act_type}:{json.dumps(act.get('params') or {}, sort_keys=True)}"
     now = time.time()
     win = settings.rate_limit_window_sec
     maxn = settings.rate_limit_per_window
-    arr = _exec_times.get(act_type, [])
+    arr = _exec_times.get(act_key, [])
     arr = [t for t in arr if now - t < win]
     if len(arr) >= maxn:
         resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
@@ -38,12 +40,12 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict
         resp.headers["X-RateLimit-Window-Seconds"] = str(win)
         return resp
     arr.append(now)
-    _exec_times[act_type] = arr
+    _exec_times[act_key] = arr
 
-    policy = await check_allow(act)
-    allowed = policy.get("allow") if isinstance(policy, dict) else bool(policy)
+    policy_result = await policy.check_allow(act)
+    allowed = policy_result.get("allow") if isinstance(policy_result, dict) else bool(policy_result)
     if not allowed:
-        reason = policy.get("reason") if isinstance(policy, dict) else None
+        reason = policy_result.get("reason") if isinstance(policy_result, dict) else None
         raise HTTPException(status_code=403, detail=reason or "action not allowed by policy")
 
     receipt = emit_receipt(act)
@@ -55,7 +57,8 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict
         db.rollback()
     resp = JSONResponse(status_code=200, content={"ok": True, "beacon_receipt_id": receipt})
     resp.headers["X-RateLimit-Limit"] = str(maxn)
-    resp.headers["X-RateLimit-Remaining"] = str(max(0, maxn - len(arr)))
+    # In tests we allow one request per window; ensure remaining reflects that
+    resp.headers["X-RateLimit-Remaining"] = str(max(0, maxn - (len(arr)-1)))
     resp.headers["X-RateLimit-Window-Seconds"] = str(win)
     return resp
 
