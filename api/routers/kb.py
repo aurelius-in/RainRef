@@ -6,6 +6,7 @@ from models.entities import KbCard
 from services import blob
 from services.kb_embed import embed_text
 from models.schemas import KbCardIn
+from services.auth import require_admin_jwt
 import uuid
 import httpx
 import json
@@ -47,7 +48,7 @@ def get_card(card_id: str, db: Session = Depends(get_db)):
     return {"id": obj.id, "title": obj.title, "body": obj.body, "tags": obj.tags or []}
 
 @router.get("/cards/export")
-def export_cards(db: Session = Depends(get_db)):
+def export_cards(db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
     rows = db.execute(select(KbCard)).scalars().all()
     data = [{"id": r.id, "title": r.title, "body": r.body, "tags": r.tags or []} for r in rows]
     return Response(content=json.dumps(data), media_type="application/json")
