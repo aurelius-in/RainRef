@@ -96,3 +96,10 @@ def get_config():
             "github": bool(os.getenv("GITHUB_REPO")) and bool(os.getenv("GITHUB_TOKEN")),
         },
     }
+
+@app.get("/config/limits")
+def config_limits():
+    return {
+        "rate_limit_window_sec": getattr(settings, "rate_limit_window_sec", 60),
+        "rate_limit_per_window": getattr(settings, "rate_limit_per_window", 10),
+    }
