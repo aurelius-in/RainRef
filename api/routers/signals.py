@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, Query, HTTPException, Response
+﻿from fastapi import APIRouter, Depends, Query, HTTPException, Response\nfrom services.auth import require_api_key
 from models.schemas import ProductSignal
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -54,3 +54,4 @@ def delete_signal(signal_id: str, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail="failed to delete")
     return Response(status_code=204)
+

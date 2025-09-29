@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query, Response
+﻿from fastapi import APIRouter, Depends, HTTPException, Query, Response\nfrom services.auth import require_api_key
 from typing import List
 from models.schemas import RefEventIn
 from models.db import SessionLocal
@@ -91,7 +91,7 @@ def get_event(event_id: str, db: Session = Depends(get_db)):
     return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
 
 @router.delete("/events/{event_id}")
-def delete_event(event_id: str, db: Session = Depends(get_db)):
+def delete_event(event_id: str, db: Session = Depends(get_db), _: None = Depends(require_api_key)):
     row = db.get(RefEvent, event_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
@@ -104,7 +104,7 @@ def delete_event(event_id: str, db: Session = Depends(get_db)):
     return Response(status_code=204)
 
 @router.get("/events/export")
-def export_events(db: Session = Depends(get_db)):
+def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key)):
     rows = db.execute(select(RefEvent)).scalars().all()
     header = "id,source,channel,user_ref,text\n"
     lines = [header]
@@ -119,3 +119,4 @@ def export_events(db: Session = Depends(get_db)):
 def stats(db: Session = Depends(get_db)):
     rows = db.execute(select(RefEvent.channel, func.count()).group_by(RefEvent.channel)).all()
     return {"by_channel": {k: int(v) for k, v in rows}}
+

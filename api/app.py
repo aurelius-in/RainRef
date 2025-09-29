@@ -73,3 +73,7 @@ def head_health():
 def system_time():
     import datetime
     return {"server_time": datetime.datetime.utcnow().isoformat() + "Z"}
+
+@app.get("/config/auth")
+def config_auth():
+    return {"api_key_required": bool(getattr(settings, "api_key", None))}

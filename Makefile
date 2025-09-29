@@ -18,3 +18,7 @@ format-web:
 
 typecheck-web:
 	cd web && npm run typecheck
+
+test-all:
+	cd api && pytest -q
+	cd web && npm run lint && npm run typecheck

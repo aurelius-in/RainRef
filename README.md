@@ -473,3 +473,7 @@ Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from 
 - Delete signal: DELETE /signals/{id}
 - Bulk delete cards: POST /kb/cards/delete
 - System time: GET /system/time
+
+### Auth & Retrieval
+- Admin endpoints require `X-API-Key` when `API_KEY` is set in `.env`.
+- Retrieval uses simple token match over embedded KB and enforces at least one citation in answers.

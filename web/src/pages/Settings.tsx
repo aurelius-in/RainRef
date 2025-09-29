@@ -6,11 +6,13 @@ export default function Settings() {
   const [details, setDetails] = useState<any>(null);
   const [info, setInfo] = useState<any>(null);
   const [cfg, setCfg] = useState<any>(null);
+  const [limits, setLimits] = useState<any>(null);
   const [tags, setTags] = useState<string[]>([]);
   useEffect(() => {
     api.get("/healthz/details").then(r => setDetails(r.data)).catch(() => setDetails({ ok: false }));
     api.get("/info").then(r => setInfo(r.data)).catch(() => setInfo({ version: "?", git_sha: "?", env: "dev" }));
     api.get("/config").then(r => setCfg(r.data)).catch(() => setCfg({ allowed_origins: [], env: "dev" }));
+    api.get("/config/limits").then(r => setLimits(r.data)).catch(() => setLimits({}));
     api.get("/kb/tags").then(r => setTags(r.data.tags || [])).catch(() => setTags([]));
   }, []);
   const clearLocal = () => { try { localStorage.clear(); alert("Local data cleared."); } catch {} };
@@ -20,6 +22,7 @@ export default function Settings() {
       <div>API base URL: {import.meta.env.VITE_API_URL || "http://localhost:8080"}</div>
       <div>Version: {info?.version} ({info?.git_sha}) â€” env: {info?.env}</div>
       <div>Allowed Origins: {(cfg?.allowed_origins||[]).join(", ")}</div>
+      <div>Rate Limits: window {limits?.rate_limit_window_sec}s, per-window {limits?.rate_limit_per_window}</div>
       <div><a href="/docs" target="_blank">API Docs</a> Â· <a href="/openapi.json" target="_blank">OpenAPI</a> Â· <Link to="/metrics">Metrics</Link></div>
       <button onClick={clearLocal}>Clear Local Storage</button>
       <h3>Health</h3>

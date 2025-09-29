@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query, Response
+﻿from fastapi import APIRouter, Depends, HTTPException, Query, Response\nfrom services.auth import require_api_key
 from models.schemas import AnswerProposal, RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
@@ -101,10 +101,11 @@ def close_ticket(ticket_id: str, db: Session = Depends(get_db)):
     return {"id": t.id, "status": t.status}
 
 @router.get("/tickets/export")
-def export_tickets(db: Session = Depends(get_db)):
+def export_tickets(db: Session = Depends(get_db), _: None = Depends(require_api_key)):
     rows = db.execute(select(Ticket)).scalars().all()
     header = "id,status,ref_event_id\n"
     lines = [header]
     for t in rows:
         lines.append(f"{t.id},{t.status},{t.ref_event_id or ''}\n")
     return Response(content="".join(lines), media_type="text/csv")
+
