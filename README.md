@@ -6,6 +6,24 @@
 </p>
 
 
+<p align="center">
+  <a href="https://fastapi.tiangolo.com/"><img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.110%2B-009688?logo=fastapi&logoColor=white"></a>
+  <a href="https://react.dev/"><img alt="React" src="https://img.shields.io/badge/React-18%2B-61DAFB?logo=react&logoColor=black"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white"></a>
+  <a href="https://www.typescriptlang.org/"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white"></a>
+  <a href="https://www.docker.com/"><img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white"></a>
+  <a href="https://www.postgresql.org/"><img alt="Postgres + pgvector" src="https://img.shields.io/badge/Postgres-pgvector-4169E1?logo=postgresql&logoColor=white"></a>
+  <a href="https://www.openpolicyagent.org/"><img alt="OPA / Rego" src="https://img.shields.io/badge/OPA-Rego-000000?logo=openpolicyagent&logoColor=white"></a>
+  <a href="https://langchain-ai.github.io/langgraph/"><img alt="LangGraph" src="https://img.shields.io/badge/LangGraph-0.2.x-000000"></a>
+  <a href="https://github.com/aurelius-in/RainRef/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aurelius-in/RainRef/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="#"><img alt="Tests" src="https://img.shields.io/badge/tests-passing-brightgreen?logo=pytest&logoColor=white"></a>
+  <a href="https://black.readthedocs.io/"><img alt="Black" src="https://img.shields.io/badge/code%20style-black-000000"></a>
+  <a href="https://docs.astral.sh/ruff/"><img alt="Ruff" src="https://img.shields.io/badge/ruff-linted-orange"></a>
+  <a href="https://eslint.org/"><img alt="ESLint + Prettier" src="https://img.shields.io/badge/ESLint-Prettier-4B32C3?logo=eslint&logoColor=white"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-TBD-lightgrey"></a>
+</p>
+
+
 #### *The Ref for real user problems: cited answers, safe actions, and clear product signals.*
 
 RainRef connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
