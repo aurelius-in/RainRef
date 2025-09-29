@@ -58,7 +58,7 @@ No hallucinations. Every answer has a source. Every action has a receipt.
 
 RainRef is **the Ref**. It takes inputs from support tickets, chat, email, GitHub issues, Slack threads, and product telemetry. It turns them into a common shape, finds the best grounded answer with citations, proposes safe actions, and emits normalized **Product Signals** to your roadmap tools.
 
-**Key idea:** In â†’ Normalize â†’ Answer with sources â†’ Safe action â†’ Signal out.
+**Key idea:** In -> Normalize -> Answer with sources -> Safe action -> Signal out.
 
 ```mermaid
 graph TB
@@ -124,7 +124,7 @@ graph TB
 * **Triage:** Intent, severity, product area, and routing
 * **Grounded Answers:** Canonical knowledge with citations
 * **Policy Gated Actions:** Only run approved actions with rollback hooks
-* **Receipts:** Tamperâ€‘evident records for every action
+* **Receipts:** Tamper-evident records for every action
 * **Product Signals:** Bugs, frictions, feature requests, pricing objections, churn risk
 * **Packs and KB:** Curated paragraphs with sources, review states, and templates
 * **Dashboards:** SLA, answer quality, action safety, signal trends
@@ -134,7 +134,7 @@ graph TB
 
 ## AI Agents
 
-RainRef uses **small, purposeâ€‘built agents**, each boxed by policies (OPA/RainBeacon), with humanâ€‘inâ€‘theâ€‘loop for critical steps. You can also run in **rulesâ€‘only (noâ€‘agent)** mode.
+RainRef uses **small, purpose-built agents**, each boxed by policies (OPA/RainBeacon), with human-in-the-loop for critical steps. You can also run in **rules-only (no-agent)** mode.
 
 1. **Intake Router**
    *Job:* normalize Zendesk/Intercom/email/GitHub/Slack into a `RefEvent`.
@@ -179,7 +179,7 @@ RainRef uses **small, purposeâ€‘built agents**, each boxed by policies (OPA
 9. **KB Curator (optional)**
    *Job:* suggest **canonical paragraphs** and tag fixes when patterns repeat.
    *Tools:* summarizer constrained to quoted sources.
-   *Output:* draft KB card â†’ human review â†’ approved.
+  *Output:* draft KB card -> human review -> approved.
 
 **Flow:**
 
@@ -199,7 +199,7 @@ graph TB
 
 ```
 
-**Noâ€‘agent mode:** disable generative steps; use exactâ€‘match KB, canned replies, and deterministic playbooksâ€”still with receipts and signals.
+**No-agent mode:** disable generative steps; use exact-match KB, canned replies, and deterministic playbooks—still with receipts and signals.
 
 ---
 
@@ -274,8 +274,8 @@ graph TB
 
 **Ref Events and Tickets**
 
-* `POST /ref/events` â€” Ingest external items in a common envelope.
-* `POST /support/ingest` â€” Convenience for ticketâ€‘like events.
+* `POST /ref/events` — Ingest external items in a common envelope.
+* `POST /support/ingest` — Convenience for ticket-like events.
 
 **Answer and Action**
 
