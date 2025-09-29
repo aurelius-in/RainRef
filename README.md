@@ -58,7 +58,7 @@ No hallucinations. Every answer has a source. Every action has a receipt.
 
 RainRef is **the Ref**. It takes inputs from support tickets, chat, email, GitHub issues, Slack threads, and product telemetry. It turns them into a common shape, finds the best grounded answer with citations, proposes safe actions, and emits normalized **Product Signals** to your roadmap tools.
 
-**Key idea:** In â†’ Normalize â†’ Answer with sources â†’ Safe action â†’ Signal out.
+**Key idea:** In -> Normalize -> Answer with sources -> Safe action -> Signal out.
 
 ```mermaid
 graph TB
@@ -179,7 +179,7 @@ RainRef uses **small, purpose-built agents**, each boxed by policies (OPA/RainBe
 9. **KB Curator**
    *Job:* suggest **canonical paragraphs** and tag fixes when patterns repeat.
    *Tools:* summarizer constrained to quoted sources.
-   *Output:* draft KB card â†’ human review â†’ approved.
+  *Output:* draft KB card -> human review -> approved.
 
 **Flow:**
 
@@ -198,8 +198,6 @@ graph TB
   J --> K[RainScout / Jira / Linear]
 
 ```
-
-**No-agent mode:** disable generative steps; use exact-match KB, canned replies, and deterministic playbooks -still with receipts and signals.
 
 ---
 
@@ -274,8 +272,8 @@ graph TB
 
 **Ref Events and Tickets**
 
-* `POST /ref/events` - Ingest external items in a common envelope.
-* `POST /support/ingest` - Convenience for ticket-like events.
+* `POST /ref/events` — Ingest external items in a common envelope.
+* `POST /support/ingest` — Convenience for ticket-like events.
 
 **Answer and Action**
 
