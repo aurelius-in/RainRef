@@ -21,18 +21,22 @@ def get_db():
 
 @router.get("/cards")
 def search_cards(query: str = Query(""), tags: str = Query(""), page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), order: str = Query("desc"), db: Session = Depends(get_db)):
-    offset = (page - 1) * limit
-    total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
-    stmt = select(KbCard).order_by(KbCard.id.asc() if order == "asc" else KbCard.id.desc())
-    rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
     q = (query or "").lower()
     tag_list = [t.strip() for t in (tags or "").split(",") if t.strip()]
-    results = []
+    # Fetch all, filter in memory, then paginate to ensure correct search results
+    rows = db.execute(select(KbCard)).scalars().all()
+    filtered = []
     for r in rows:
         matches_q = (not q) or q in (r.title or "").lower() or q in (r.body or "").lower()
         matches_tags = (not tag_list) or (set(tag_list).issubset(set((r.tags or []))))
         if matches_q and matches_tags:
-            results.append({"id": r.id, "title": r.title, "tags": r.tags or []})
+            filtered.append(r)
+    # Sort
+    filtered.sort(key=lambda r: r.id, reverse=(order != "asc"))
+    total = len(filtered)
+    offset = (page - 1) * limit
+    page_items = filtered[offset: offset + limit]
+    results = [{"id": r.id, "title": r.title, "tags": r.tags or []} for r in page_items]
     return {"page": page, "limit": limit, "total": int(total), "results": results}
 
 @router.get("/cards/{card_id}")

@@ -97,13 +97,6 @@ def delete_event(event_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="failed to delete")
     return {"ok": True}
 
-@router.get("/events/{event_id}")
-def get_event(event_id: str, db: Session = Depends(get_db)):
-    row = db.get(RefEvent, event_id)
-    if not row:
-        raise HTTPException(status_code=404, detail="not_found")
-    return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
-
 @router.get("/events/export")
 def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_key)):
     rows = db.execute(select(RefEvent)).scalars().all()
@@ -120,4 +113,11 @@ def export_events(db: Session = Depends(get_db), _: None = Depends(require_api_k
 def stats(db: Session = Depends(get_db)):
     rows = db.execute(select(RefEvent.channel, func.count()).group_by(RefEvent.channel)).all()
     return {"by_channel": {k: int(v) for k, v in rows}}
+
+@router.get("/events/{event_id}")
+def get_event(event_id: str, db: Session = Depends(get_db)):
+    row = db.get(RefEvent, event_id)
+    if not row:
+        raise HTTPException(status_code=404, detail="not_found")
+    return {"id": row.id, "source": row.source, "channel": row.channel, "text": row.text, "user_ref": row.user_ref}
 
