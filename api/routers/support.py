@@ -4,6 +4,8 @@ from models.db import SessionLocal
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, text
 from services.flow import run_flow
+from services.graph_flow import run_flow_graph
+import os
 from models.entities import Ticket, Action
 import uuid
 
@@ -28,7 +30,11 @@ def answer(ref_event: RefEventIn = None, db: Session = Depends(get_db)):
 		db.rollback()
 		raise HTTPException(status_code=500, detail="failed to create ticket")
 
-	proposal, _ = run_flow(db, ref_event)
+	use_graph = (os.getenv("USE_LANGGRAPH") or os.getenv("USE_GRAPH")) in ("1", "true", "TRUE")
+	if use_graph:
+		proposal, _ = run_flow_graph(db, ref_event)
+	else:
+		proposal, _ = run_flow(db, ref_event)
 	if not proposal.citations:
 		raise HTTPException(status_code=422, detail="answer must include citations")
 	proposal = AnswerProposal(**{**proposal.model_dump(), "ticket_id": tid})
