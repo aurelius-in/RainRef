@@ -477,3 +477,14 @@ Enable pre-commit locally: `pip install pre-commit && pre-commit install` (from 
 ### Auth & Retrieval
 - Admin endpoints require `X-API-Key` when `API_KEY` is set in `.env`.
 - Retrieval uses simple token match over embedded KB and enforces at least one citation in answers.
+
+### Roadmap & Extensibility
+- Retrieval: swap the simple retriever for BM25 + vectors (pgvector) and add reranking
+- Adapters: implement real Zendesk/Intercom/GitHub adapters using their APIs
+- Auth: JWT/user roles; gate admin routes; audit access
+- E2E: add Playwright web tests; spin docker stack in CI
+- Packaging: docker images, npm/pypi SDKs
+- Deploy: one-click templates (Render/Fly/AKS)
+
+### Extending Adapters
+Create a class with `name` and `perform(payload: dict) -> str` in `api/services/adapters/` and wire where needed.

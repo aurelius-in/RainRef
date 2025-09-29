@@ -1,4 +1,7 @@
 ﻿from typing import Dict, Any
 
-def create_ticket(payload: Dict[str, Any]) -> str:
-    return "zd-123"
+class ZendeskAdapter:
+    name = "zendesk"
+    def perform(self, payload: Dict[str, Any]) -> str:
+        # simulate creating a ticket and return id
+        return "zd-" + (payload.get("external_id") or "123")

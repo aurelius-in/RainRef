@@ -1,4 +1,7 @@
 ﻿from typing import Dict, Any
 
-def create_issue(payload: Dict[str, Any]) -> str:
-    return "gh-123"
+class GithubAdapter:
+    name = "github"
+    def perform(self, payload: Dict[str, Any]) -> str:
+        # simulate creating an issue
+        return "gh-" + (payload.get("external_id") or "123")
