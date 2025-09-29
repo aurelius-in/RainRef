@@ -116,7 +116,7 @@ graph TB
 
 ## AI Agents
 
-RainRef uses **small, purposeâ€‘built agents**, each boxed by policies (OPA/RainBeacon), with humanâ€‘inâ€‘theâ€‘loop for critical steps. You can also run in **rulesâ€‘only (noâ€‘agent)** mode.
+RainRef uses **small, purpose-built agents**, each boxed by policies (OPA/RainBeacon), with humanâ€‘inâ€‘theâ€‘loop for critical steps. You can also run in **rulesâ€‘only (noâ€‘agent)** mode.
 
 1. **Intake Router**
    *Job:* normalize Zendesk/Intercom/email/GitHub/Slack into a `RefEvent`.
