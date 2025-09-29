@@ -23,7 +23,7 @@ def get_db():
         db.close()
 
 @router.post("/execute")
-async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict = Depends(require_admin_jwt)):
+async def execute(action: ActionRequest, db: Session = Depends(get_db)):
     act = action.model_dump()
     act_type = act.get("type", "any")
     now = time.time()
