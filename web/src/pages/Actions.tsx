@@ -20,7 +20,7 @@ export default function Actions() {
         <>
           <ul>
             {items.map(a => (
-              <li key={a.id}>{a.type} â€” ticket: {a.ticket_id || "-"} â€” <a href={`${API_BASE}/audit/${a.receipt_id}`} target="_blank" rel="noreferrer">receipt</a></li>
+              <li key={a.id}>{a.type} — ticket: {a.ticket_id || "-"} — <a href={`${API_BASE}/audit/${a.receipt_id}`} target="_blank" rel="noreferrer">receipt</a></li>
             ))}
           </ul>
           <div style={{ display: 'flex', gap: 8 }}>

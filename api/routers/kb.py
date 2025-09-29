@@ -62,6 +62,17 @@ def list_tags(db: Session = Depends(get_db)):
             tags.add(t)
     return {"tags": sorted(tags)}
 
+@router.get("/stats")
+def kb_stats(db: Session = Depends(get_db)):
+    rows = db.execute(select(KbCard.tags)).all()
+    tag_counts: dict[str, int] = {}
+    total = db.execute(select(func.count()).select_from(KbCard)).scalar() or 0
+    for (arr,) in rows:
+        for t in (arr or []):
+            tag_counts[t] = tag_counts.get(t, 0) + 1
+    top_tags = sorted(({"tag": k, "count": int(v)} for k, v in tag_counts.items()), key=lambda x: x["count"], reverse=True)[:10]
+    return {"total": int(total), "top_tags": top_tags}
+
 @router.post("/cards")
 def upsert_card(card: dict, db: Session = Depends(get_db)):
     cid = card.get("id") or f"kb-{uuid.uuid4().hex[:6]}"

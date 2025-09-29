@@ -9,13 +9,26 @@ default allow = {"allow": false, "reason": "policy: not allowed"}
 allow = res {
   some t
   t := input.action.type
-  ok := allowed_action[t]
+  ok := allowed_action(t)
   res := {"allow": ok, "reason": reason_for[t]}
 }
 
-allowed_action := {
-  "resend_activation": true,
-  "note": true,
+allowed_action(t) {
+  # resend_activation allowed to admin or support_lead
+  t == "resend_activation"
+  roles := input.user.roles
+  roles[_] == "admin"; roles[_] == "support_lead"
+}
+allowed_action(t) {
+  # note allowed to admin, support_lead, or support
+  t == "note"
+  roles := input.user.roles
+  roles[_] == "admin"; roles[_] == "support_lead"
+}
+allowed_action(t) {
+  t == "note"
+  roles := input.user.roles
+  roles[_] == "support"
 }
 
 reason_for := {
