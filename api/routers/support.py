@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from models.schemas import AnswerProposal, RefEventIn
 from models.db import SessionLocal
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from services.flow import run_flow
 from models.entities import Ticket, Action
 import uuid
@@ -59,7 +59,7 @@ def list_tickets(
 	stmt = select(Ticket)
 	if status:
 		stmt = stmt.where(Ticket.status == status)
-	stmt = stmt.order_by(Ticket.id.asc() if order == "asc" else Ticket.id.desc())
+	stmt = stmt.order_by(text("created_at asc") if order == "asc" else text("created_at desc"))
 	total = db.execute(select(func.count()).select_from(stmt.subquery())).scalar() or 0
 	rows = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
 	ql = (q or "").lower()

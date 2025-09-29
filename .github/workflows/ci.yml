@@ -1,4 +1,74 @@
-﻿name: ci
+﻿name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  api-tests:
+    name: API tests (pytest)
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rainref
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system deps (psql client)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for i in {1..60}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 2
+          done
+
+      - name: Install Python deps
+        working-directory: api
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run migrations
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/rainref
+        run: |
+          python migrate.py
+
+      - name: Run tests
+        working-directory: api
+        env:
+          DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/rainref
+        run: |
+          pytest -q
+
+name: ci
 on: [push, pull_request]
 jobs:
   api:
