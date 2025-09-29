@@ -1,7 +1,17 @@
 ﻿package rainref.allow
 
-default allow = false
+default allow = {"allow": false, "reason": "not allowed"}
 
-allow {
-  input.action.type == "resend_activation"
+allow = res {
+  some t
+  t := input.action.type
+  res := {"allow": allowed_action[t], "reason": reason_for[t]}
+}
+
+allowed_action := {
+  "resend_activation": true
+}
+
+reason_for := {
+  "resend_activation": "policy: resend activation allowed"
 }

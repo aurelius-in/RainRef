@@ -22,5 +22,6 @@ pypdf
 python-docx
 rapidfuzz
 PyJWT[crypto]
+bcrypt
 uvloop; platform_system != "Windows"
 

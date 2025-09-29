@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Text, Float, JSON
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from models.db import Base
+from sqlalchemy import Boolean
 
 
 class KbCard(Base):
@@ -67,5 +68,15 @@ class AuditLog(Base):
     receipt_id: Mapped[str] = mapped_column(Text, nullable=False)
     verified: Mapped[bool] = mapped_column(default=False)
     # created_at handled by DB default
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    email: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    roles: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=False, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 

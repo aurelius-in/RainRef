@@ -33,6 +33,7 @@ services:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/rainref
       ALLOWED_ORIGINS: '["http://localhost:5173"]'
       OPA_URL: http://opa:8181
+      REQUIRE_JWT_FOR_ADMIN: "true"
     ports: ["8088:8080"]
     depends_on: [db, opa, azurite]
     volumes:
