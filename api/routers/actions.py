@@ -40,9 +40,11 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db), __: dict
     arr.append(now)
     _exec_times[act_type] = arr
 
-    allowed = await check_allow(act)
+    policy = await check_allow(act)
+    allowed = policy.get("allow") if isinstance(policy, dict) else bool(policy)
     if not allowed:
-        raise HTTPException(status_code=403, detail="action not allowed by policy")
+        reason = policy.get("reason") if isinstance(policy, dict) else None
+        raise HTTPException(status_code=403, detail=reason or "action not allowed by policy")
 
     receipt = emit_receipt(act)
     db.add(AuditLog(id=receipt, receipt_id=receipt, verified=False))

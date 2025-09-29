@@ -21,6 +21,7 @@ class Settings(BaseSettings):
 
     # Auth / JWT
     require_jwt_for_admin: bool = False
+    # allow override via env var REQUIRE_JWT_FOR_ADMIN
     jwt_secret: str = "change-me-dev"
     jwt_algorithm: str = "HS256"
     jwt_exp_minutes: int = 60
