@@ -76,6 +76,35 @@ jobs:
         working-directory: api
         run: black --check .
 
+  e2e-docker:
+    name: Docker e2e smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and start stack
+        run: |
+          docker compose -f infra/docker-compose.yml up -d --build
+
+      - name: Wait for API
+        run: |
+          for i in {1..60}; do curl -fsS http://localhost:8088/healthz && break || sleep 2; done
+
+      - name: Smoke (bash)
+        run: |
+          bash scripts/smoke.sh http://localhost:8088 admin@rainref.local admin || true
+
+      - name: Smoke (PowerShell core)
+        shell: pwsh
+        run: |
+          ./scripts/smoke.ps1 http://localhost:8088 admin@rainref.local admin
+
+      - name: Teardown
+        if: always()
+        run: |
+          docker compose -f infra/docker-compose.yml down -v
+
   web-lint:
     if: ${{ hashFiles('web/package.json') != '' }}
     name: Web lint/typecheck
