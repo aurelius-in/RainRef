@@ -27,9 +27,16 @@ api.interceptors.response.use(
     const rid = err?.response?.headers?.['x-request-id'];
     const disableToasts = String(import.meta.env.VITE_DISABLE_TOASTS||'').toLowerCase() === 'true';
     if (!disableToasts) {
-      if (status === 429) { showToast('Take a beat — we throttled duplicate clicks.'); }
-      else if (rid) { showToast(`Request ${rid}: ${msg}`); }
-      else { showToast(`Error ${status || ''} ${msg}`.trim()); }
+      // Suppress noisy 404s (empty states) from toasts; still reject for callers
+      if (status === 404) {
+        // no toast for 404 to avoid repeated noise on empty pages
+      } else if (status === 429) {
+        showToast('Take a beat — we throttled duplicate clicks.');
+      } else if (rid) {
+        showToast(`Request ${rid}: ${msg}`);
+      } else {
+        showToast(`Error ${status || ''} ${msg}`.trim());
+      }
     }
     console.error("API error", status, err?.response?.data, rid);
     return Promise.reject(err);

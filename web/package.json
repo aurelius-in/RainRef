@@ -3,6 +3,7 @@
     "version":  "0.1.0",
     "private":  true,
     "type":  "module",
+    "postcss": {},
     "scripts":  {
                     "dev":  "vite",
                     "build":  "tsc -b \u0026\u0026 vite build",
@@ -27,6 +28,7 @@
                             "prettier":  "^3.2.5",
                             "typescript":  "^5.4.5",
                             "vite":  "^5.2.8",
+                            "@vitejs/plugin-react": "^4.3.1",
                             "eslint-plugin-react":  "^7.34.1",
                             "eslint-plugin-react-hooks":  "^4.6.0",
                             "@playwright/test": "^1.47.0"
