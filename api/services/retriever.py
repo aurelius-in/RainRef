@@ -84,6 +84,21 @@ def retrieve(db: Session, query: str, k: int = 5) -> List[Tuple[str, str, float]
             hybrid = 0.6 * lex_score + 0.4 * vecsim
             candidates.append((rid, body or "", hybrid))
 
+    # If FTS returned nothing, do a broad lexical+vector sweep as fallback
+    if not candidates:
+        try:
+            rows = db.execute(select(KbCard.id, KbCard.title, KbCard.body, KbCard.embedding)).all()
+            for rid, title, body, emb in rows:
+                text_blob = (title or "") + "\n" + (body or "")
+                bm25ish = float(token_set_ratio((query or ""), text_blob))
+                lex_score = bm25ish / 100.0
+                vecsim = cosine(qv, (emb or [])[:len(qv)])
+                hybrid = 0.6 * lex_score + 0.4 * vecsim
+                if hybrid > 0:
+                    candidates.append((rid, body or "", hybrid))
+        except Exception:
+            pass
+
     # Rerank and diversify
     buffer = max(k * 5, 10)
     candidates.sort(key=lambda x: x[2], reverse=True)
