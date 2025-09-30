@@ -27,7 +27,10 @@
   <img src="rr_demo.gif" alt="RainRef demo walkthrough" width="900" />
   <br/><em>Quick UI/UX walkthrough</em>
 </p>
-
+<p align="center">
+  <img src="rr_day.png" alt="RainRef Day/Light Mode" width="450" />
+  <br/><em>RainRef Day/Light Mode</em>
+</p>
 
 #### *The Ref for real user problems: cited answers, safe actions, and clear product signals.*
 
