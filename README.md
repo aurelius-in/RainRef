@@ -101,6 +101,37 @@ graph TB
 * **Evidence Packs:** Exports weekly PDF or Docx of themes, counts, and receipts.
 
 ---
+## Why This Repo Is Larger Than A Typical App
+
+RainRef is not a single-purpose demo. It is an end-to-end reference for a production-minded AI support system: cited answers, policy-gated actions with receipts, and product signals. That scope spans multiple disciplines (API, retrieval, policy, audit, adapters, UI, CI/CD, ops).
+
+- **Domain breadth**: ingest → triage → retrieve → draft answer → policy gate → execute → beacon receipt → signalize. Each step is explicit and testable.
+- **Production disciplines**: database migrations, rate limits, hardened security headers/CSP, OPA policies, receipts persistence/verification, observability hooks, smoke + e2e tests, release workflow, and backup/restore scripts.
+- **Multi-environment**: dev and prod Docker Compose profiles with Postgres+pgvector, OPA, Redis (optional), Azurite (dev), and OTEL; feature flags to run minimal or full stack.
+
+### Subsystem inventory (high level)
+- **API (FastAPI)**: routers for `ref`, `support`, `action`, `kb`, `signals`, `audit`, `auth`, `metrics`, `admin`, `adapters`.
+- **Policy engine (OPA/Rego)**: allow/deny with structured reasons and role checks.
+- **Retrieval**: hybrid Postgres FTS (ts_rank) + pgvector rerank with RapidFuzz fallback; embeddings stubs are swappable.
+- **Flows**: straightforward flow and a LangGraph scaffold for triage/ground/plan/gate.
+- **Receipts (RainBeacon)**: HMAC-signed, persisted, verifiable receipts wired into action/audit.
+- **Adapters**: Zendesk/Intercom/GitHub with retries/backoff and admin-config endpoints.
+- **Web (React + Vite + TS)**: Inbox, Answer workspace, KB, Signals, Receipts, Playbooks, Settings; three-pane layout; a11y touches; global search.
+- **Ops**: per-IP rate limiter (in-memory or Redis), hardened headers (HSTS, COOP/COEP/CORP), CSP, health/metrics.
+- **CI/CD**: unit + docker e2e + Playwright; release workflow builds/pushes API/Web images on tags.
+- **Docs & scripts**: DEPLOY.md, SECURITY.md, smoke scripts, pg backup/restore.
+
+### What you gain from this complexity
+- **Safety and auditability**: policy-gated execution with verifiable receipts.
+- **Reproducibility**: dockerized dev/prod, migrations, deterministic tests and smoke.
+- **Extensibility**: adapters, policies, retrieval strategy, and flows are module boundaries intended to be swapped or expanded.
+
+### How to trim for a lighter fork
+- Disable or defer subsystems you don’t need: set `USE_REDIS_LIMITER=false`, skip OTEL, use in-memory limiter, skip external adapters.
+- Keep only core endpoints (`/support/answer`, `/action/execute`, `/kb/*`) and the web Inbox/Answer/KB pages.
+- Use the in-repo smoke test as the minimal e2e to validate your pared-down build.
+
+---
 
 ## Why RainRef?
 
