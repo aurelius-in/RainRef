@@ -20,7 +20,7 @@ class KbCard(Base):
     tags: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=False, default=list)
     embedding: Mapped[list[float] | None] = mapped_column(ARRAY(Float), nullable=True)
     # New pgvector column; keep array for backward-compat
-    embedding_vec: Mapped[list[float] | None] = mapped_column(Vector(64), nullable=True)  # type: ignore
+    embedding_vec: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)  # type: ignore
     # created_at/updated_at handled by DB defaults in migration
 
 
