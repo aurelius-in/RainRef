@@ -1,6 +1,7 @@
 ﻿from typing import Dict, Any, Optional
 import os
 import httpx
+from .base import http_post_with_retries
 
 class IntercomAdapter:
     name = "intercom"
@@ -18,10 +19,11 @@ class IntercomAdapter:
             }
             headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
             url = f"{base.rstrip('/')}/messages"
-            with httpx.Client(timeout=10) as client:
-                r = client.post(url, json=data, headers=headers)
-                r.raise_for_status()
+            r = http_post_with_retries(url, data, headers, timeout=10.0, retries=2)
+            try:
                 mid = r.json().get("id")
                 return f"ic-{mid}" if mid else "ic-unknown"
-        except Exception:
-            return "ic-error"
+            except Exception:
+                raise RuntimeError(f"Intercom response parse error: status={r.status_code} body={r.text[:200]}")
+        except httpx.HTTPError as e:
+            raise RuntimeError(f"Intercom HTTP error: {str(e)}")

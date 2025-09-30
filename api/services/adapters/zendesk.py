@@ -1,6 +1,7 @@
 ﻿from typing import Dict, Any, Optional
 import os
 import httpx
+from .base import http_post_with_retries
 
 class ZendeskAdapter:
     name = "zendesk"
@@ -20,10 +21,11 @@ class ZendeskAdapter:
             }
             headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
             url = f"{base.rstrip('/')}/api/v2/tickets.json"
-            with httpx.Client(timeout=10) as client:
-                r = client.post(url, json=data, headers=headers)
-                r.raise_for_status()
+            r = http_post_with_retries(url, data, headers, timeout=10.0, retries=2)
+            try:
                 tid = r.json().get("ticket", {}).get("id")
                 return f"zd-{tid}" if tid else "zd-unknown"
-        except Exception:
-            return "zd-error"
+            except Exception:
+                raise RuntimeError(f"Zendesk response parse error: status={r.status_code} body={r.text[:200]}")
+        except httpx.HTTPError as e:
+            raise RuntimeError(f"Zendesk HTTP error: {str(e)}")

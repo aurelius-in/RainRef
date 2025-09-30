@@ -1,6 +1,7 @@
 ﻿from typing import Dict, Any, Optional
 import os
 import httpx
+from .base import http_post_with_retries
 
 class GithubAdapter:
     name = "github"
@@ -17,10 +18,11 @@ class GithubAdapter:
             }
             headers = {"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"}
             url = f"https://api.github.com/repos/{repo}/issues"
-            with httpx.Client(timeout=10) as client:
-                r = client.post(url, json=data, headers=headers)
-                r.raise_for_status()
+            r = http_post_with_retries(url, data, headers, timeout=10.0, retries=2)
+            try:
                 num = r.json().get("number")
                 return f"gh-{num}" if num else "gh-unknown"
-        except Exception:
-            return "gh-error"
+            except Exception:
+                raise RuntimeError(f"GitHub response parse error: status={r.status_code} body={r.text[:200]}")
+        except httpx.HTTPError as e:
+            raise RuntimeError(f"GitHub HTTP error: {str(e)}")
