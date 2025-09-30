@@ -24,7 +24,8 @@
 
 
 <p align="center">
-  <img src="rr_demo.gif" alt="RainRef demo walkthrough" width="900" />
+  <img src="rr_demo.png" alt="RainRef demo walkthrough" width="900" />
+  <br/><em>Quick UI/UX walkthrough</em>
 </p>
 
 
