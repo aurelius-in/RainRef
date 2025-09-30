@@ -59,25 +59,25 @@ def retrieve(db: Session, query: str, k: int = 5) -> List[Tuple[str, str, float]
                 hybrid = 0.6 * lex_score + 0.4 * vecsim
                 candidates.append((rid, body or "", hybrid))
         else:
-            # No query -> take recent cards via ORM
-            rows = db.execute(select(KbCard).limit(max(k * 5, 20))).scalars().all()
-            for r in rows:
-                text_blob = (r.title or "") + "\n" + (r.body or "")
+            # No query -> take recent cards via ORM (select only needed columns)
+            rows = db.execute(select(KbCard.id, KbCard.title, KbCard.body, KbCard.embedding).limit(max(k * 5, 20))).all()
+            for rid, title, body, emb in rows:
+                text_blob = (title or "") + "\n" + (body or "")
                 bm25ish = float(token_set_ratio((query or ""), text_blob))
                 lex_score = bm25ish / 100.0
-                vecsim = cosine(qv, (r.embedding or [])[:len(qv)])
+                vecsim = cosine(qv, (emb or [])[:len(qv)])
                 hybrid = 0.6 * lex_score + 0.4 * vecsim
-                candidates.append((r.id, r.body or "", hybrid))
+                candidates.append((rid, body or "", hybrid))
     except Exception:
         # Fallback: in-Python lexical + vector over all rows
-        rows = db.execute(select(KbCard)).scalars().all()
-        for r in rows:
-            text_blob = (r.title or "") + "\n" + (r.body or "")
+        rows = db.execute(select(KbCard.id, KbCard.title, KbCard.body, KbCard.embedding)).all()
+        for rid, title, body, emb in rows:
+            text_blob = (title or "") + "\n" + (body or "")
             bm25ish = float(token_set_ratio((query or ""), text_blob))
             lex_score = bm25ish / 100.0
-            vecsim = cosine(qv, (r.embedding or [])[:len(qv)])
+            vecsim = cosine(qv, (emb or [])[:len(qv)])
             hybrid = 0.6 * lex_score + 0.4 * vecsim
-            candidates.append((r.id, r.body or "", hybrid))
+            candidates.append((rid, body or "", hybrid))
 
     # Rerank and diversify
     buffer = max(k * 5, 10)
