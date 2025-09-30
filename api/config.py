@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     # Rate limiting for actions
     rate_limit_window_sec: int = 60
     rate_limit_per_window: int = 10
+    redis_url: str | None = None
+    use_redis_limiter: bool = False
 
     # Auth / JWT
     require_jwt_for_admin: bool = False

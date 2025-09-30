@@ -15,9 +15,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
 from collections import defaultdict
 
+# Optional Redis
+try:
+    import redis  # type: ignore
+except Exception:
+    redis = None  # type: ignore
+
 app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Signals", version=settings.app_version)
 
-logging.getLogger().setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
+logging.getLogger().setLevel(getattr(logging.log, settings.log_level.upper(), logging.INFO))
 
 app.add_middleware(GZipMiddleware, compresslevel=5)
 app.add_middleware(
@@ -30,30 +36,57 @@ app.add_middleware(
 
 logger = logging.getLogger("uvicorn.access")
 
-# Simple per-IP sliding window limiter for all routes
-_ip_hits: dict[str, list[float]] = defaultdict(list)
+# Rate limiting config
 GLOBAL_WINDOW_SEC = int(getattr(settings, "rate_limit_window_sec", 60))
 GLOBAL_MAX_REQ = int(getattr(settings, "rate_limit_per_window", 100))
+_ip_hits: dict[str, list[float]] = defaultdict(list)
+_redis_client = None
+if settings.use_redis_limiter and settings.redis_url and redis is not None:
+    try:
+        _redis_client = redis.Redis.from_url(settings.redis_url, socket_timeout=0.5)
+        _redis_client.ping()
+    except Exception:
+        _redis_client = None
+
 
 @app.middleware("http")
 async def request_id_and_log(request: Request, call_next):
     rid = request.headers.get("X-Request-ID") or f"req-{uuid.uuid4().hex[:8]}"
     start = time.time()
 
-    # Rate limit by IP
+    # Rate limit by IP (Redis if available)
     ip = request.client.host if request.client else "unknown"
-    now = time.time()
-    hits = _ip_hits[ip]
-    hits[:] = [t for t in hits if now - t < GLOBAL_WINDOW_SEC]
-    if len(hits) >= GLOBAL_MAX_REQ:
-        resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
-        resp.headers["Retry-After"] = str(GLOBAL_WINDOW_SEC)
-        resp.headers["X-RateLimit-Limit"] = str(GLOBAL_MAX_REQ)
-        resp.headers["X-RateLimit-Remaining"] = "0"
-        resp.headers["X-RateLimit-Window-Seconds"] = str(GLOBAL_WINDOW_SEC)
-        resp.headers["X-Request-ID"] = rid
-        return resp
-    hits.append(now)
+    if _redis_client is not None:
+        key = f"rr:rl:{ip}:{int(time.time() // GLOBAL_WINDOW_SEC)}"
+        try:
+            pipe = _redis_client.pipeline()
+            pipe.incr(key, 1)
+            pipe.expire(key, GLOBAL_WINDOW_SEC)
+            count, _ = pipe.execute()
+            count = int(count or 0)
+            if count > GLOBAL_MAX_REQ:
+                resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
+                resp.headers["Retry-After"] = str(GLOBAL_WINDOW_SEC)
+                resp.headers["X-RateLimit-Limit"] = str(GLOBAL_MAX_REQ)
+                resp.headers["X-RateLimit-Remaining"] = "0"
+                resp.headers["X-RateLimit-Window-Seconds"] = str(GLOBAL_WINDOW_SEC)
+                resp.headers["X-Request-ID"] = rid
+                return resp
+        except Exception:
+            pass  # fall through to proceed
+    else:
+        now = time.time()
+        hits = _ip_hits[ip]
+        hits[:] = [t for t in hits if now - t < GLOBAL_WINDOW_SEC]
+        if len(hits) >= GLOBAL_MAX_REQ:
+            resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
+            resp.headers["Retry-After"] = str(GLOBAL_WINDOW_SEC)
+            resp.headers["X-RateLimit-Limit"] = str(GLOBAL_MAX_REQ)
+            resp.headers["X-RateLimit-Remaining"] = "0"
+            resp.headers["X-RateLimit-Window-Seconds"] = str(GLOBAL_WINDOW_SEC)
+            resp.headers["X-Request-ID"] = rid
+            return resp
+        hits.append(now)
 
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
@@ -62,11 +95,9 @@ async def request_id_and_log(request: Request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' http://localhost:8088 http://localhost:5173"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    # Additional hardening
     response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
     response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
     response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
-    # Enable HSTS only if behind HTTPS
     if (os.getenv("ENABLE_HSTS", "false").lower() == "true"):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 

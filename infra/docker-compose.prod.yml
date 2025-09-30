@@ -15,6 +15,9 @@ services:
     volumes:
       - ../api/policies:/policies
 
+  redis:
+    image: redis:7-alpine
+
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     command: ["azurite", "-l", "/data", "--blobHost", "0.0.0.0"]
@@ -31,8 +34,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me}
       REQUIRE_JWT_FOR_ADMIN: ${REQUIRE_JWT_FOR_ADMIN:-true}
       RAINBEACON_SECRET: ${RAINBEACON_SECRET:-rainbeacon-prod}
+      USE_REDIS_LIMITER: ${USE_REDIS_LIMITER:-false}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     ports: ["8080:8080"]
-    depends_on: [db, opa, azurite]
+    depends_on: [db, opa, azurite, redis]
 
   web:
     build: ../web
