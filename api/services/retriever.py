@@ -69,6 +69,11 @@ def retrieve(db: Session, query: str, k: int = 5) -> List[Tuple[str, str, float]
                 hybrid = 0.6 * lex_score + 0.4 * vecsim
                 candidates.append((rid, body or "", hybrid))
     except Exception:
+        # Ensure session is usable after SQL error
+        try:
+            db.rollback()
+        except Exception:
+            pass
         # Fallback: in-Python lexical + vector over all rows
         rows = db.execute(select(KbCard.id, KbCard.title, KbCard.body, KbCard.embedding)).all()
         for rid, title, body, emb in rows:
