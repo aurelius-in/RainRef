@@ -19,18 +19,70 @@ export default function Events() {
   // Local mock data for offline/empty-state preview and pagination testing
   const cap = (s?: string) => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   const MOCK_ITEMS = useMemo(() => {
-    const base = [
-      { channel: 'Support', intent: 'Bug', severity: 'High', product: 'Login', text: 'Bug: app crashes on login', assignee: 'Alex' },
-      { channel: 'Support', intent: 'Friction', severity: 'Med', product: 'Activation', text: 'Activation link not received', assignee: 'Jamie' },
-      { channel: 'Issues', intent: 'Feature', severity: 'Low', product: 'Settings', text: 'Feature: add export to CSV', assignee: 'Priya' },
-      { channel: 'Tickets', intent: 'Pricing', severity: 'Low', product: 'Billing', text: 'Coupon not applied at checkout', assignee: 'Sam' },
-      { channel: 'Support', intent: 'Churn', severity: 'High', product: 'Account', text: 'Cancel request due to repeated downtime', assignee: 'Taylor' },
+    const channels = ['Support','Issues','Tickets'];
+    const intents = ['Bug','Friction','Feature','Pricing','Churn'];
+    const severities = ['High','Med','Low'];
+    const products = ['Login','Activation','Billing','Dashboard','API','Settings','Reports','Onboarding','Imports','Exports','Webhooks','Notifications'];
+    const problems = [
+      'crashes on submit','times out at step 2','shows incorrect totals','button has no effect','returns 500 intermittently',
+      'link expired too fast','throws permission denied','renders slowly on large data','sends duplicate emails','drops attachment on mobile',
+      'fails SSO redirect','API key rejected','CSV parser error on line 1','memory usage spikes','stuck in loading state'
     ];
+    const requests = [
+      'add export to CSV','support SSO for admins','allow custom webhooks','add dark mode toggle','enable sandbox mode',
+      'bulk edit mode','role-based filters','download as PDF','column pinning','keyboard shortcuts'
+    ];
+    const adjectives = ['urgent','sporadic','regional','edge-case','recurring','first-time','regression','recent','customer-reported','hard-to-repro','steady','intermittent'];
+    const contexts = ['EU tenants','US-West only','mobile Safari','Chrome 126','Firefox ESR','Windows 11','macOS Sonoma','Android 14','iOS 17'];
+    const verbs = ['fails','breaks','misbehaves','degrades','malfunctions','regresses','hangs'];
+    const nouns = ['invoice flow','session','cache','indexer','notifier','renderer','scheduler'];
+    const assignees = ['Alex','Jamie','Priya','Sam','Taylor','Jordan','Morgan','Riley','Cameron','Dana'];
+    const variants = ['v1','v2','v3','alpha','beta','rc1','rc2'];
+    const makeText = (i:number, intent:string, product:string) => {
+      const adj = adjectives[i % adjectives.length];
+      const ctx = contexts[i % contexts.length];
+      const vb = verbs[i % verbs.length];
+      const nn = nouns[i % nouns.length];
+      const ver = variants[i % variants.length];
+      if (intent === 'Feature') {
+        const r = requests[i % requests.length];
+        return `${r} in ${product} (${adj}, ${ctx}) [${ver}] #${i+1}`;
+      }
+      if (intent === 'Pricing') {
+        return `Discount not applied for ${product} (${adj}, ${ctx}) [${ver}] #${i+1}`;
+      }
+      if (intent === 'Churn') {
+        return `Considering cancel due to ${product.toLowerCase()} experience (${adj}, ${ctx}) [${ver}] #${i+1}`;
+      }
+      if (intent === 'Friction') {
+        return `${product} is confusing / unclear (${adj}, ${ctx}) [${ver}] #${i+1}`;
+      }
+      // Bug
+      const p = problems[i % problems.length];
+      return `${product} ${vb} — ${p} in ${nn} (${adj}, ${ctx}) [${ver}] #${i+1}`;
+    };
     const arr: any[] = [];
     const rand = (min:number,max:number)=>Math.floor(Math.random()*(max-min+1))+min;
-    for (let i = 0; i < 40; i++) {
-      const t = base[i % base.length];
-      arr.push({ id: `m-${i+1}`, ...t, created_at: new Date(Date.now()-i*60*60*1000).toISOString(), age: `${rand(1,7)}d`, sla: `${rand(1,24)}h` });
+    const total = 600; // 5x more data for richer demo
+    for (let i = 0; i < total; i++) {
+      const channel = channels[i % channels.length];
+      const intent = intents[i % intents.length];
+      const severity = severities[i % severities.length];
+      const product = products[i % products.length];
+      const text = makeText(i, intent, product);
+      const assignee = assignees[i % assignees.length];
+      arr.push({
+        id: `m-${i+1}`,
+        channel,
+        intent,
+        severity,
+        product,
+        text,
+        assignee,
+        created_at: new Date(Date.now() - i * 19 * 60 * 1000).toISOString(),
+        age: `${rand(1,7)}d`,
+        sla: `${rand(1,24)}h`
+      });
     }
     return arr;
   }, []);

@@ -23,6 +23,11 @@
 </p>
 
 
+<p align="center">
+  <img src="rr_demo.gif" alt="RainRef demo walkthrough" width="900" />
+</p>
+
+
 #### *The Ref for real user problems: cited answers, safe actions, and clear product signals.*
 
 RainRef connects your support tools, chats, emails, and issue trackers to safe fixes and clean product signals. It helps your team answer customers with citations, run only approved actions, and send structured signals to your roadmap tools or to RainScout.
