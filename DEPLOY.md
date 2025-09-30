@@ -54,6 +54,17 @@ Configure windows via:
 - rate_limit_window_sec (default 60)
 - rate_limit_per_window (default 100)
 
+## Backups
+Use the provided scripts:
+
+```bash
+# Backup
+scripts/pg_backup.sh "$DATABASE_URL" backup.sql.gz
+
+# Restore
+scripts/pg_restore.sh "$DATABASE_URL" backup.sql.gz
+```
+
 Tune via environment in `api/config.py`.
 
 ## Data and Backups
