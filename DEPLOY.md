@@ -7,6 +7,7 @@ This document summarizes recommended production deployment steps and settings.
 - Web (Vite/React, static hosting ok)
 - Postgres with pgvector
 - OPA (Open Policy Agent)
+- Optional: Redis for global rate limiting
 - Optional: Azurite (use real Azure Blob in prod), OTEL collector
 
 ## Environment Variables (API)
@@ -22,6 +23,8 @@ This document summarizes recommended production deployment steps and settings.
 - GITHUB_REPO / GITHUB_TOKEN
 - RAINBEACON_SECRET: HMAC key for receipts
 - OTEL_EXPORTER_OTLP_ENDPOINT: optional
+- USE_REDIS_LIMITER: true|false
+- REDIS_URL: redis://redis:6379/0
 
 ## Docker Compose (prod)
 Use `infra/docker-compose.prod.yml` as a starting point. Example:
@@ -44,7 +47,10 @@ The API sets strong defaults:
 - CSP (adjust connect-src for your domains)
 
 ## Rate Limiting
-Global per-IP limiter uses:
+Global limiter supports:
+- In-memory per-IP (default)
+- Redis-backed per-IP (set USE_REDIS_LIMITER=true and REDIS_URL)
+Configure windows via:
 - rate_limit_window_sec (default 60)
 - rate_limit_per_window (default 100)
 

@@ -1,10 +1,10 @@
-$ErrorActionPreference = "Stop"
-
 param(
   [string]$Api = "http://localhost:8088",
   [string]$User = "admin@rainref.local",
   [string]$Pass = "admin"
 )
+
+$ErrorActionPreference = "Stop"
 
 Write-Host "RainRef smoke against $Api"
 

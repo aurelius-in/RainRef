@@ -24,4 +24,5 @@ rapidfuzz
 PyJWT[crypto]
 bcrypt
 uvloop; platform_system != "Windows"
+redis
 

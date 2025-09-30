@@ -5,6 +5,7 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: rainref
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/rainref
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 3s
@@ -19,6 +20,10 @@ services:
     volumes:
       - ../api/policies:/policies
 
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
     command: ["azurite", "-l", "/data", "--blobHost", "0.0.0.0", "--queueHost", "0.0.0.0", "--tableHost", "0.0.0.0"]
@@ -28,26 +33,42 @@ services:
 
   api:
     build: ../api
-    env_file: ../api/.env
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/rainref
-      ALLOWED_ORIGINS: '["http://localhost:5173"]'
+      BLOB_CONN_STRING: ${AZURE_BLOB_CONN_STRING}
       OPA_URL: http://opa:8181
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ALLOWED_ORIGINS: '["http://localhost:5173"]'
+      API_KEY: ${API_KEY}
+      JWT_SECRET: ${JWT_SECRET}
       REQUIRE_JWT_FOR_ADMIN: "true"
+      BEACON_SECRET: ${BEACON_SECRET}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      USE_LANGGRAPH: "false"
+      USE_REDIS_LIMITER: "true"
+      REDIS_URL: redis://redis:6379/0
     ports: ["8088:8080"]
-    depends_on: [db, opa, azurite]
+    depends_on: [db, opa, azurite, redis]
     volumes:
       - ../api:/app
 
   web:
     build: ../web
-    env_file: ../web/.env
     environment:
       VITE_API_URL: http://localhost:8088
     ports: ["5173:5173"]
     depends_on: [api]
     volumes:
       - ../web:/app
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317"
+      - "14268:14268"
 
 volumes:
   db_data:
