@@ -24,11 +24,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <ErrorBoundary>
+        <Splash />
         <Header />
         <div className="app-shell">
           <aside className="left-rail ref-stripes" aria-label="Primary navigation">
-            <nav style={{ display:'flex', flexDirection:'column', gap:12, padding: 8 }}>
-              <Link to="/">Inbox</Link>
+            <nav style={{ display:'flex', flexDirection:'column', gap:12, padding: 0 }}>
+              <Link to="/">Events</Link>
               <Link to="/events/current">Answer</Link>
               <Link to="/signals">Signals</Link>
               <Link to="/kb">KB</Link>
@@ -73,7 +74,7 @@ function Drawer({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const hasDrawer = /\/events\//.test(location.pathname) || /\/audit\//.test(location.pathname);
+  const hasDrawer = (/^\/events\/(?!current)([^\/]+)$/.test(location.pathname)) || (/^\/audit\/(.+)$/.test(location.pathname));
 
   useEffect(() => {
     if (!hasDrawer) return;
@@ -112,14 +113,14 @@ function Drawer({ children }: { children: React.ReactNode }) {
       role="dialog"
       aria-modal="true"
       tabIndex={-1}
-      style={{ padding: 12, overflowY:'auto' }}
+      style={{ padding: 12, overflowY:'auto', display:'flex', flexDirection:'column' }}
     >
+      {children}
       {hasDrawer && (
-        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:8 }}>
+        <div style={{ display:'flex', justifyContent:'flex-end', marginTop:12 }}>
           <button onClick={()=>navigate(-1)} aria-label="Close">Close</button>
         </div>
       )}
-      {children}
     </aside>
   );
 }
@@ -130,4 +131,42 @@ function getFocusables(root: HTMLElement) {
   ];
   const nodes = Array.from(root.querySelectorAll<HTMLElement>(selectors.join(',')));
   return nodes.filter(el => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+}
+
+function Splash() {
+  const splashRef = useRef<HTMLDivElement | null>(null);
+  const scheduledRef = useRef<boolean>(false);
+  useEffect(() => {
+    const cover = document.getElementById('rr-splash-cover');
+    const logo = document.getElementById('rr-splash-logo') as HTMLImageElement | null;
+    const schedule = () => {
+      if (scheduledRef.current) return; // prevent double schedule
+      scheduledRef.current = true;
+      const t1 = window.setTimeout(() => { cover?.classList.add('fill'); }, 5000);
+      const t2 = window.setTimeout(() => { splashRef.current?.classList.add('fade'); }, 5900);
+      // cleanup
+      return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+    };
+    let cleanup: (() => void) | undefined;
+    if (logo) {
+      if (logo.complete) {
+        cleanup = schedule() || undefined;
+      } else {
+        const onLoad = () => { cleanup = schedule() || undefined; };
+        logo.addEventListener('load', onLoad, { once: true });
+        // Fallback in case load doesn't fire (cached or error)
+        const t = window.setTimeout(() => { cleanup = schedule() || undefined; }, 300);
+        cleanup = () => { window.clearTimeout(t); };
+      }
+    } else {
+      cleanup = schedule() || undefined;
+    }
+    return () => { cleanup && cleanup(); };
+  }, []);
+  return (
+    <div ref={splashRef} className="splash-overlay">
+      <img id="rr-splash-logo" src="/rr-white-trans.png" alt="RainRef" className="splash-logo" />
+      <div id="rr-splash-cover" className="splash-cover" />
+    </div>
+  );
 }

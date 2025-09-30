@@ -12,8 +12,8 @@ export default function Audit() {
       <h2>Receipts</h2>
       {items === null ? <div>Loading…</div> : (
         <table style={{ width:'100%', borderCollapse:'collapse' }}>
-          <thead>
-            <tr style={{ textAlign:'left', color:'var(--muted)' }}>
+          <thead className="table-head-center">
+            <tr style={{ color:'var(--muted)' }}>
               <th>Time</th>
               <th>Action</th>
               <th>Target</th>

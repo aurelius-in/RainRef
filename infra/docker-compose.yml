@@ -22,7 +22,6 @@ services:
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
 
   azurite:
     image: mcr.microsoft.com/azure-storage/azurite
@@ -56,10 +55,12 @@ services:
     build: ../web
     environment:
       VITE_API_URL: http://localhost:8088
-    ports: ["5173:5173"]
+    ports: ["5174:5173"]
     depends_on: [api]
     volumes:
       - ../web:/app
+      - /app/node_modules
+    command: sh -lc "npm install --no-fund --no-audit && npm run dev -- --host 0.0.0.0"
 
   otel-collector:
     image: otel/opentelemetry-collector:latest
