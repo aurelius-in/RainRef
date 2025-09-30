@@ -19,10 +19,16 @@ def get_receipt(receipt_id: str, db: Session = Depends(get_db)):
     row = db.get(AuditLog, receipt_id)
     if not row:
         raise HTTPException(status_code=404, detail="not_found")
-    ok, details = verify_receipt(row.receipt_id)
+    ok, details = verify_receipt(row.receipt_id, db)
+    row.verified = bool(ok)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
     return {
         "receipt_id": row.receipt_id,
-        "verified": bool(row.verified) and ok,
+        "verified": row.verified,
+        "verification_details": details,
         "details": details,
         "created_at": getattr(row, "created_at", None),
     }

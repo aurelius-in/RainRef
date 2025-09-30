@@ -54,7 +54,7 @@ async def execute(action: ActionRequest, db: Session = Depends(get_db), authoriz
         reason = policy_result.get("reason") if isinstance(policy_result, dict) else None
         raise HTTPException(status_code=403, detail=reason or "action not allowed by policy")
 
-    receipt = emit_receipt(act)
+    receipt = emit_receipt(act, db)
     db.add(AuditLog(id=receipt, receipt_id=receipt, verified=False))
     db.add(Action(id=f"a-{receipt}", ticket_id=(act.get("ticket_id") or None), type=act_type, params=act.get("params") or {}))
     try:
