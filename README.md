@@ -355,6 +355,8 @@ services:
 
 Run migrations and seed scripts from `infra/migrations`.
 
+For production guidance, see [DEPLOY.md](./DEPLOY.md).
+
 ---
 
 ## How RainRef Fits The RainStorm Suite

@@ -13,6 +13,7 @@ from config import settings
 import os
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.responses import JSONResponse
+from collections import defaultdict
 
 app = FastAPI(title="RainRef API", description="Ref Events, Answers, Actions, Signals", version=settings.app_version)
 
@@ -29,10 +30,31 @@ app.add_middleware(
 
 logger = logging.getLogger("uvicorn.access")
 
+# Simple per-IP sliding window limiter for all routes
+_ip_hits: dict[str, list[float]] = defaultdict(list)
+GLOBAL_WINDOW_SEC = int(getattr(settings, "rate_limit_window_sec", 60))
+GLOBAL_MAX_REQ = int(getattr(settings, "rate_limit_per_window", 100))
+
 @app.middleware("http")
 async def request_id_and_log(request: Request, call_next):
     rid = request.headers.get("X-Request-ID") or f"req-{uuid.uuid4().hex[:8]}"
     start = time.time()
+
+    # Rate limit by IP
+    ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    hits = _ip_hits[ip]
+    hits[:] = [t for t in hits if now - t < GLOBAL_WINDOW_SEC]
+    if len(hits) >= GLOBAL_MAX_REQ:
+        resp = JSONResponse(status_code=429, content={"detail": "too many requests"})
+        resp.headers["Retry-After"] = str(GLOBAL_WINDOW_SEC)
+        resp.headers["X-RateLimit-Limit"] = str(GLOBAL_MAX_REQ)
+        resp.headers["X-RateLimit-Remaining"] = "0"
+        resp.headers["X-RateLimit-Window-Seconds"] = str(GLOBAL_WINDOW_SEC)
+        resp.headers["X-Request-ID"] = rid
+        return resp
+    hits.append(now)
+
     response = await call_next(request)
     response.headers["X-Request-ID"] = rid
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -40,6 +62,14 @@ async def request_id_and_log(request: Request, call_next):
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' http://localhost:8088 http://localhost:5173"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    # Additional hardening
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    # Enable HSTS only if behind HTTPS
+    if (os.getenv("ENABLE_HSTS", "false").lower() == "true"):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+
     dur = (time.time() - start) * 1000
     logger.info(f"{rid} {request.method} {request.url.path} -> {response.status_code} in {dur:.1f}ms")
     return response
@@ -106,5 +136,5 @@ def get_config():
 def config_limits():
     return {
         "rate_limit_window_sec": getattr(settings, "rate_limit_window_sec", 60),
-        "rate_limit_per_window": getattr(settings, "rate_limit_per_window", 10),
+        "rate_limit_per_window": getattr(settings, "rate_limit_per_window", 100),
     }
